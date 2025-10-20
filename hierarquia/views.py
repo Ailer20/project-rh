@@ -7,7 +7,10 @@ from django.http import JsonResponse
 from django.db.models import Q
 from .models import Funcionario, Cargo, Setor, CentroServico, Requisicao
 from datetime import datetime
+from django.contrib.auth.models import User, Permission 
 
+# Adicione esta linha inteira
+from django.contrib.contenttypes.models import ContentType
 
 def login_view(request):
     """View para login de usuários"""
@@ -61,12 +64,19 @@ def listar_funcionarios(request):
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
     
-    # Filtrar funcionários baseado na hierarquia
+    # --- CORREÇÃO 1 (NameError) ---
+    # Primeiro, definimos a lista de setores do gestor
+    setores_do_gestor = funcionario_logado.setor.all()
+    
+    # Busca todos os funcionários ativos
     funcionarios = Funcionario.objects.filter(ativo=True)
     
-    # Se não for diretor, filtra por setor
+    # Se o usuário logado NÃO for Diretor (nível 1), filtramos
+    # para mostrar apenas funcionários dos seus setores.
     if funcionario_logado.cargo.nivel > 1:
-        funcionarios = funcionarios.filter(setor=funcionario_logado.setor)
+        # Usamos __in para verificar se o funcionário está EM QUALQUER UM
+        # dos setores da lista 'setores_do_gestor'
+        funcionarios = funcionarios.filter(setor__in=setores_do_gestor).distinct()
     
     # Busca por nome
     busca = request.GET.get('busca', '')
@@ -90,8 +100,10 @@ def cadastrar_funcionario(request):
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
     
-    # Apenas admin pode cadastrar
-    if funcionario_logado.cargo.nivel != 1:
+    # --- CORREÇÃO 2 (Permissão) ---
+    # Trocamos a verificação de "nível 1" pela permissão real
+    # que definimos no models.py. (Níveis 1-4 terão ela)
+    if not request.user.has_perm('hierarquia.add_funcionario'):
         return render(request, 'hierarquia/sem_permissao.html')
     
     if request.method == 'POST':
@@ -100,28 +112,37 @@ def cadastrar_funcionario(request):
         cpf = request.POST.get('cpf')
         data_admissao = request.POST.get('data_admissao')
         cargo_id = request.POST.get('cargo')
-        setor_id = request.POST.get('setor')
+        
+        # --- CORREÇÃO 3 (Lógica ManyToMany) ---
+        # 1. Pegamos uma LISTA de IDs do formulário
+        setores_ids = request.POST.getlist('setor')
         centro_servico_id = request.POST.get('centro_servico')
         
         try:
             cargo = Cargo.objects.get(id=cargo_id)
-            setor = Setor.objects.get(id=setor_id)
-            centro_servico = None
+            # 2. Buscamos TODOS os objetos Setor que estavam na lista
+            setores = Setor.objects.filter(id__in=setores_ids)
             
+            centro_servico = None
             if centro_servico_id:
                 centro_servico = CentroServico.objects.get(id=centro_servico_id)
             
+            # 3. Criamos o funcionário SEM o setor
             funcionario = Funcionario.objects.create(
                 nome=nome,
                 data_nascimento=data_nascimento if data_nascimento else None,
                 cpf=cpf,
                 data_admissao=data_admissao,
                 cargo=cargo,
-                setor=setor,
+                # 'setor' não pode ser passado no create()
                 centro_servico=centro_servico,
             )
             
+            # 4. Adicionamos os setores DEPOIS de criar o objeto
+            funcionario.setor.set(setores)
+            
             return redirect('listar_funcionarios')
+        
         except Exception as e:
             context = {
                 'funcionario_logado': funcionario_logado,
@@ -152,8 +173,20 @@ def detalhar_funcionario(request, funcionario_id):
     
     funcionario = get_object_or_404(Funcionario, id=funcionario_id)
     
+    # --- CORREÇÃO 4 (Lógica ManyToMany) ---
     # Verificar permissão de visualização
-    if funcionario_logado.cargo.nivel > 1 and funcionario.setor != funcionario_logado.setor:
+    
+    # 1. Pega os setores do gestor
+    setores_do_gestor = funcionario_logado.setor.all()
+    
+    # 2. Verifica se o funcionário detalhado compartilha PELO MENOS UM setor com o gestor
+    #    Usamos .values_list('id', flat=True) para performance
+    pertence_aos_setores = funcionario.setor.filter(
+        id__in=setores_do_gestor.values_list('id', flat=True)
+    ).exists()
+    
+    # 3. Se não for diretor E não compartilhar setores, bloqueia
+    if funcionario_logado.cargo.nivel > 1 and not pertence_aos_setores:
         return render(request, 'hierarquia/sem_permissao.html')
     
     context = {
@@ -179,10 +212,11 @@ def listar_requisicoes(request):
         requisicoes = Requisicao.objects.all()
     else:
         # Mostra suas próprias requisições e as de seus subordinados
+        # (O método obter_subordinados() já foi corrigido no models.py)
         subordinados = funcionario_logado.obter_subordinados()
         requisicoes = Requisicao.objects.filter(
             Q(solicitante=funcionario_logado) | Q(solicitante__in=subordinados)
-        )
+        ).distinct()
     
     # Filtrar por status
     status = request.GET.get('status', '')
@@ -237,12 +271,23 @@ def detalhar_requisicao(request, requisicao_id):
     
     # Verificar permissão
     subordinados = funcionario_logado.obter_subordinados()
-    if (requisicao.solicitante != funcionario_logado and 
-        requisicao.solicitante not in subordinados and
-        funcionario_logado.cargo.nivel > 1):
+    
+    # Verifica se o solicitante é o próprio logado OU está na lista de subordinados
+    pode_ver = (
+        requisicao.solicitante == funcionario_logado or 
+        subordinados.filter(id=requisicao.solicitante.id).exists()
+    )
+    
+    if not pode_ver and funcionario_logado.cargo.nivel > 1: # Diretor pode ver tudo
         return render(request, 'hierarquia/sem_permissao.html')
     
-    if request.method == 'POST':
+    # Define se o usuário pode aprovar
+    pode_aprovar = (
+        requisicao.status == 'pendente' and
+        (subordinados.filter(id=requisicao.solicitante.id).exists() or funcionario_logado.cargo.nivel == 1)
+    )
+
+    if request.method == 'POST' and pode_aprovar:
         acao = request.POST.get('acao')
         
         if acao == 'aprovar':
@@ -261,8 +306,7 @@ def detalhar_requisicao(request, requisicao_id):
     context = {
         'funcionario_logado': funcionario_logado,
         'requisicao': requisicao,
-        'pode_aprovar': (requisicao.status == 'pendente' and 
-                        (requisicao.solicitante in subordinados or funcionario_logado.cargo.nivel == 1)),
+        'pode_aprovar': pode_aprovar,
     }
     
     return render(request, 'hierarquia/detalhar_requisicao.html', context)
@@ -298,6 +342,7 @@ def gerenciar_cargos(request):
     context = {
         'funcionario_logado': funcionario_logado,
         'cargos': cargos,
+        'nivel_choices': Cargo.NIVEL_CHOICES
     }
     
     return render(request, 'hierarquia/gerenciar_cargos.html', context)

@@ -185,7 +185,11 @@
                 </div>
                 <div class="info-item">
                     <div class="info-label">Setor</div>
-                    <div class="info-value">{{ funcionario.setor.nome }}</div>
+                    <div class="info-value">
+                        {% for setor in funcionario.setor.all %}
+                            {{ setor.nome }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
                 {% if funcionario.centro_servico %}
                 <div class="info-item">

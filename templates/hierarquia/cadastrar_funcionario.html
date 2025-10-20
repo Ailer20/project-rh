@@ -225,13 +225,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="setor">Setor *</label>
-                        <select id="setor" name="setor" required>
-                            <option value="">Selecione um setor</option>
+                        <label for="setor">Setores:</label>
+                        <select name="setor" id="setor" class="form-control" multiple>
                             {% for setor in setores %}
-                            <option value="{{ setor.id }}">{{ setor.nome }}</option>
+                                <option value="{{ setor.id }}">{{ setor.nome }}</option>
                             {% endfor %}
                         </select>
+                        <small>Segure Ctrl (ou Cmd) para selecionar mais de um.</small>
                     </div>
                 </div>
 

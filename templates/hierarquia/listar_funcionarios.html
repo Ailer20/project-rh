@@ -254,7 +254,11 @@
                         <td><strong>{{ func.nome }}</strong></td>
                         <td>{{ func.cpf }}</td>
                         <td><span class="cargo-badge">{{ func.cargo.nome }}</span></td>
-                        <td><span class="setor-badge">{{ func.setor.nome }}</span></td>
+                        <td>
+                            {% for setor in func.setor.all %}
+                                <span class="setor-badge">{{ setor.nome }}</span>
+                            {% endfor %}
+                        </td>
                         <td>{{ func.data_admissao|date:"d/m/Y" }}</td>
                         <td>
                             <a href="{% url 'detalhar_funcionario' func.id %}" class="action-link">Ver Detalhes →</a>

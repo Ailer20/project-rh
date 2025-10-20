@@ -258,7 +258,11 @@
             <h3>Informações do Seu Perfil</h3>
             <p><strong>Nome:</strong> {{ funcionario.nome }}</p>
             <p><strong>Cargo:</strong> {{ funcionario.cargo.nome }} <span class="badge">Nível {{ funcionario.cargo.nivel }}</span></p>
-            <p><strong>Setor:</strong> {{ funcionario.setor.nome }}</p>
+            <p><strong>Setores:</strong>
+                {% for setor in funcionario.setor.all %}
+                    {{ setor.nome }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
             <p><strong>Data de Admissão:</strong> {{ funcionario.data_admissao|date:"d/m/Y" }}</p>
             {% if funcionario.centro_servico %}
             <p><strong>Centro de Serviço:</strong> {{ funcionario.centro_servico.nome }}</p>
