@@ -55,41 +55,60 @@ def dashboard(request):
     
     return render(request, 'hierarquia/dashboard.html', context)
 
-
 @login_required(login_url='login')
-def listar_funcionarios(request):
-    """View para listar funcionários"""
+def listar_funcionarios_por_setor(request, setor_id): # Nome e parâmetro alterados
+    """View para listar funcionários DE UM SETOR ESPECÍFICO."""
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
-    
-    # --- CORREÇÃO 1 (NameError) ---
-    # Primeiro, definimos a lista de setores do gestor
-    setores_do_gestor = funcionario_logado.setor.all()
-    
-    # Busca todos os funcionários ativos
-    funcionarios = Funcionario.objects.filter(ativo=True)
-    
-    # Se o usuário logado NÃO for Diretor (nível 1), filtramos
-    # para mostrar apenas funcionários dos seus setores.
-    if funcionario_logado.cargo.nivel > 1:
-        # Usamos __in para verificar se o funcionário está EM QUALQUER UM
-        # dos setores da lista 'setores_do_gestor'
-        funcionarios = funcionarios.filter(setor__in=setores_do_gestor).distinct()
-    
-    # Busca por nome
+
+    # Pega o setor específico ou retorna erro 404 se não existir
+    setor = get_object_or_404(Setor, id=setor_id)
+
+    # Verifica permissão: Diretor pode ver qualquer setor,
+    # outros só podem ver setores aos quais pertencem.
+    setores_permitidos = funcionario_logado.setor.all()
+    if funcionario_logado.cargo.nivel > 1 and setor not in setores_permitidos:
+         return render(request, 'hierarquia/sem_permissao.html', {'mensagem': f'Você não tem permissão para ver funcionários do setor "{setor.nome}".'})
+
+    # Filtra funcionários ATIVOS e DO SETOR específico
+    funcionarios = Funcionario.objects.filter(ativo=True, setor=setor)
+
+    # Aplica busca por nome, se houver
     busca = request.GET.get('busca', '')
     if busca:
         funcionarios = funcionarios.filter(nome__icontains=busca)
-    
+
     context = {
         'funcionario_logado': funcionario_logado,
-        'funcionarios': funcionarios,
+        'funcionarios': funcionarios.order_by('nome'), # Ordena por nome
+        'setor': setor, # Passa o objeto setor para o template
         'busca': busca,
     }
-    
+
     return render(request, 'hierarquia/listar_funcionarios.html', context)
+
+@login_required(login_url='login')
+def listar_setores_funcionarios(request):
+    """View para listar os setores que o usuário pode ver."""
+    try:
+        funcionario_logado = request.user.funcionario
+    except Funcionario.DoesNotExist:
+        return render(request, 'hierarquia/sem_acesso.html')
+
+    # Determina quais setores mostrar
+    if funcionario_logado.cargo.nivel == 1: # Diretor vê todos
+        setores = Setor.objects.all().order_by('nome')
+    else: # Outros níveis veem apenas os seus setores
+        setores = funcionario_logado.setor.all().order_by('nome')
+
+    context = {
+        'funcionario_logado': funcionario_logado, # Passa para o base.html
+        'setores': setores,
+    }
+
+    return render(request, 'hierarquia/listar_setores.html', context)
 
 
 @login_required(login_url='login')

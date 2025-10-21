@@ -39,7 +39,7 @@
                 <a href="{% url 'dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <i class="fas fa-home"></i> <span class="menu-text">Dashboard</span>
                 </a>
-                <a href="{% url 'listar_funcionarios' %}" class="menu-item {% if request.resolver_match.url_name == 'listar_funcionarios' or request.resolver_match.url_name == 'detalhar_funcionario' or request.resolver_match.url_name == 'cadastrar_funcionario' %}active{% endif %}">
+                <a href="{% url 'listar_setores_funcionarios' %}" class="menu-item {% if 'funcionarios' in request.resolver_match.view_name %}active{% endif %}"> {# Atualiza href e condição active #}
                     <i class="fas fa-users"></i> <span class="menu-text">Funcionários</span>
                 </a>
                 <a href="{% url 'listar_requisicoes' %}" class="menu-item {% if 'requisicoes' in request.resolver_match.url_name %}active{% endif %}">

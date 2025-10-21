@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Selecionar Setor - Funcionários{% endblock title %}
+
+{% block extra_css %}
+    {# Criaresmos um CSS simples para os cards de setor #}
+    <link rel="stylesheet" href="{% static 'css/listar_setores.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h2>Funcionários por Setor</h2>
+        <p>Selecione um setor para visualizar os funcionários.</p>
+    </div>
+
+    {% if setores %}
+        <div class="sector-cards-grid">
+            {% for setor in setores %}
+                {# Cada card é um link para a lista de funcionários filtrada #}
+                <a href="{% url 'listar_funcionarios_por_setor' setor.id %}" class="sector-card">
+                    <div class="sector-card-icon">🏢</div>
+                    <div class="sector-card-name">{{ setor.nome }}</div>
+                    {# Opcional: Adicionar contagem de funcionários se você otimizar a view #}
+                    {# <div class="sector-card-count">{{ setor.num_funcionarios }} Funcionários</div> #}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state-card"> {# Um card para estado vazio #}
+             <p>Você não está associado a nenhum setor ou não há setores cadastrados.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock content %}

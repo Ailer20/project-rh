@@ -1,0 +1,73 @@
+/* static/css/listar_setores.css */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto; /* Centraliza */
+    padding: 0; /* Padding vem do main-content */
+}
+
+.header {
+    margin-bottom: 30px;
+}
+
+.header h2 {
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.header p {
+     color: var(--text-secondary);
+     font-size: 16px;
+}
+
+.sector-cards-grid {
+    display: grid;
+    /* Cria colunas responsivas, mínimo 200px, máximo 1fr */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px; /* Espaçamento entre os cards */
+}
+
+.sector-card {
+    display: block; /* Para o link ocupar o espaço */
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 25px 20px;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    text-decoration: none; /* Remove sublinhado do link */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+}
+
+.sector-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px var(--shadow-color);
+}
+
+.sector-card-icon {
+    font-size: 36px;
+    margin-bottom: 15px;
+    color: var(--accent-color); /* Cor de destaque */
+}
+
+.sector-card-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+/* Estilo opcional para contagem (se adicionar) */
+.sector-card-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.empty-state-card {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 40px 20px;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    text-align: center;
+    color: var(--text-muted);
+}

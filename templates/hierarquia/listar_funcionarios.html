@@ -1,7 +1,7 @@
-{% extends 'base.html' %} {# Ou 'hierarquia/base.html' #}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Funcionários - Sistema de Hierarquia{% endblock title %}
+{% block title %}Funcionários - Setor {{ setor.nome }}{% endblock title %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/listar_funcionarios.css' %}">
@@ -10,16 +10,18 @@
 {% block content %}
 <div class="container">
     <div class="header">
-        <h2>Funcionários</h2>
-        {# Permissão para adicionar (Níveis 1-4) #}
-        {% if perms.hierarquia.add_funcionario %} 
-            <a href="{% url 'cadastrar_funcionario' %}" class="btn">+ Novo Funcionário</a>
+        {# Mostra o nome do setor no título #}
+        <h2>Funcionários - Setor: {{ setor.nome }}</h2>
+        {# Permissão para adicionar #}
+        {% if perms.hierarquia.add_funcionario %}
+            {# Opcional: Passar setor_id para pré-selecionar no form #}
+            <a href="{% url 'cadastrar_funcionario' %}?setor_id={{ setor.id }}" class="btn">+ Novo Funcionário</a>
         {% endif %}
     </div>
 
     <div class="search-box">
-        <form method="GET"> {# Formulário engloba input e botão #}
-            <input type="text" name="busca" placeholder="Buscar por nome..." value="{{ busca }}">
+        <form method="GET">
+            <input type="text" name="busca" placeholder="Buscar por nome neste setor..." value="{{ busca }}">
             <button type="submit">🔍 Buscar</button>
         </form>
     </div>
@@ -32,7 +34,7 @@
                     <th>Nome</th>
                     <th>CPF</th>
                     <th>Cargo</th>
-                    <th>Setores</th> {# Atualizado para plural #}
+                    {# Não precisa mais mostrar setor aqui, já estamos filtrados #}
                     <th>Data Admissão</th>
                     <th>Ação</th>
                 </tr>
@@ -43,13 +45,7 @@
                     <td><strong>{{ func.nome }}</strong></td>
                     <td>{{ func.cpf }}</td>
                     <td><span class="cargo-badge">{{ func.cargo.nome }}</span></td>
-                    <td>
-                        {% for setor in func.setor.all %}
-                            <span class="setor-badge">{{ setor.nome }}</span>
-                        {% empty %}
-                            - {# Mostra um traço se não houver setores #}
-                        {% endfor %}
-                    </td>
+                    {# Removida a célula de setores #}
                     <td>{{ func.data_admissao|date:"d/m/Y" }}</td>
                     <td>
                         <a href="{% url 'detalhar_funcionario' func.id %}" class="action-link">Ver Detalhes →</a>
@@ -60,15 +56,15 @@
         </table>
     </div>
     {% else %}
-    <div class="table-container"> {# Mantém card branco mesmo vazio #}
+    <div class="table-container">
         <div class="empty-state">
             <div class="empty-state-icon">👤</div>
-            <p>Nenhum funcionário encontrado{% if busca %} para "{{ busca }}"{% endif %}.</p> {# Mensagem melhorada #}
+            <p>Nenhum funcionário encontrado neste setor{% if busca %} para "{{ busca }}"{% endif %}.</p>
         </div>
     </div>
     {% endif %}
 
-    {# Botão Voltar não é necessário se a navegação é pela sidebar #}
-    {# <a href="{% url 'dashboard' %}" class="btn" style="margin-top: 20px;">← Voltar ao Dashboard</a> #}
+    {# Link para voltar à lista de setores #}
+    <a href="{% url 'listar_setores_funcionarios' %}" class="btn" style="margin-top: 20px;">← Voltar para Setores</a>
 </div>
 {% endblock content %}
