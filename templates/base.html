@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Hierarquia{% endblock title %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block extra_css %}{% endblock extra_css %}
+</head>
+<body>
+    <nav class="navbar">
+        <h1>Sistema de RH</h1>
+        <div class="navbar-user">
+            {% if user.is_authenticated and user.funcionario %}
+                <span>{{ user.funcionario.nome }} ({{ user.funcionario.cargo.nome }})</span>
+            {% else %}
+                <span>Visitante</span>
+            {% endif %}
+            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Alternar tema">
+                <i class="fas fa-moon"></i>
+            </button>
+            <a href="{% url 'logout' %}">Sair</a>
+        </div>
+    </nav>
+    <div class="page-container">
+        <aside class="sidebar" id="sidebar"> {# Added ID #}
+            <div class="sidebar-header"> {# Wrapper for header and pin button #}
+                <h3>Menu Principal</h3>
+                <button id="pin-sidebar-btn" class="pin-btn" aria-label="Fixar menu lateral">
+                    <i class="fas fa-thumbtack"></i> {# Initial icon (thumbtack) #}
+                </button>
+            </div>
+            <div class="menu-items">
+                {# Wrap text in span #}
+                <a href="{% url 'dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-home"></i> <span class="menu-text">Dashboard</span>
+                </a>
+                <a href="{% url 'listar_funcionarios' %}" class="menu-item {% if request.resolver_match.url_name == 'listar_funcionarios' or request.resolver_match.url_name == 'detalhar_funcionario' or request.resolver_match.url_name == 'cadastrar_funcionario' %}active{% endif %}">
+                    <i class="fas fa-users"></i> <span class="menu-text">Funcionários</span>
+                </a>
+                <a href="{% url 'listar_requisicoes' %}" class="menu-item {% if 'requisicoes' in request.resolver_match.url_name %}active{% endif %}">
+                     <i class="fas fa-clipboard-list"></i> <span class="menu-text">Requisições</span>
+                </a>
+
+                {% if perms.hierarquia.add_funcionario %}
+                    <a href="{% url 'cadastrar_funcionario' %}" class="menu-item">
+                         <i class="fas fa-user-plus"></i> <span class="menu-text">Cadastrar Funcionário</span>
+                    </a>
+                {% endif %}
+
+                {% if user.is_authenticated and user.funcionario and user.funcionario.cargo.nivel == 1 %}
+                <a href="{% url 'gerenciar_cargos' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_cargos' %}active{% endif %}">
+                     <i class="fas fa-briefcase"></i> <span class="menu-text">Gerenciar Cargos</span>
+                </a>
+                <a href="{% url 'gerenciar_setores' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_setores' %}active{% endif %}">
+                    <i class="fas fa-building"></i> <span class="menu-text">Gerenciar Setores</span>
+                </a>
+                {% endif %}
+            </div>
+        </aside>
+
+        <main class="main-content" id="main-content"> {# Added ID #}
+            {% block content %}
+            {% endblock content %}
+        </main>
+    </div>
+
+    {% block extra_js %}{% endblock extra_js %}
+
+    <script>
+        // --- Theme Toggle Logic ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-theme');
+                themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        if (currentTheme) {
+            setTheme(currentTheme);
+        } else if (prefersDarkScheme.matches) {
+             setTheme('dark');
+        } else {
+             setTheme('light');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            let newTheme = document.body.classList.contains('dark-theme') ? 'light' : 'dark';
+            setTheme(newTheme);
+        });
+
+        // --- Sidebar Collapse/Pin Logic ---
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
+        let isPinned = localStorage.getItem('sidebarPinned') === 'true'; // Check local storage
+
+        // Function to apply styles based on state
+        function applySidebarState() {
+            if (isPinned) {
+                sidebar.classList.add('sidebar-pinned');
+                sidebar.classList.remove('sidebar-collapsed'); // Ensure it's expanded when pinned
+                pinSidebarBtn.innerHTML = '<i class="fas fa-lock"></i>'; // Locked icon
+                pinSidebarBtn.setAttribute('aria-label', 'Desafixar menu lateral');
+            } else {
+                sidebar.classList.remove('sidebar-pinned');
+                // Start collapsed if not pinned (apply class initially)
+                sidebar.classList.add('sidebar-collapsed');
+                pinSidebarBtn.innerHTML = '<i class="fas fa-thumbtack"></i>'; // Thumbtack icon
+                pinSidebarBtn.setAttribute('aria-label', 'Fixar menu lateral');
+
+            }
+        }
+
+        // Apply initial state on load
+        applySidebarState();
+
+        // Pin button click listener
+        pinSidebarBtn.addEventListener('click', () => {
+            isPinned = !isPinned; // Toggle the pinned state
+            localStorage.setItem('sidebarPinned', isPinned); // Save state
+            applySidebarState(); // Apply the new styles
+        });
+
+        // Hover listeners (only effective if NOT pinned)
+        sidebar.addEventListener('mouseenter', () => {
+            if (!isPinned) {
+                sidebar.classList.remove('sidebar-collapsed');
+            }
+        });
+
+        sidebar.addEventListener('mouseleave', () => {
+            if (!isPinned) {
+                sidebar.classList.add('sidebar-collapsed');
+            }
+        });
+
+    </script>
+</body>
+</html>

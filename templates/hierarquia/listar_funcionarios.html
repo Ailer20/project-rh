@@ -1,282 +1,74 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Funcionários - Sistema de Hierarquia</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %} {# Ou 'hierarquia/base.html' #}
+{% load static %}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-            color: #333;
-        }
+{% block title %}Funcionários - Sistema de Hierarquia{% endblock title %}
 
-        .navbar {
-            background: linear-gradient(135deg, #161616 0%, #505050 100%);
-            color: white;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/listar_funcionarios.css' %}">
+{% endblock extra_css %}
 
-        .navbar h1 {
-            font-size: 24px;
-        }
-
-        .navbar-user {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .navbar-user a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
-
-        .navbar-user a:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .header h2 {
-            font-size: 28px;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .search-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .search-box input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .search-box button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: #f5f7fa;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #666;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        tbody tr:hover {
-            background: #f9f9f9;
-        }
-
-        .cargo-badge {
-            display: inline-block;
-            background: #e8eaf6;
-            color: #667eea;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .setor-badge {
-            display: inline-block;
-            background: #f3e5f5;
-            color: #764ba2;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .action-link {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s;
-        }
-
-        .action-link:hover {
-            color: #764ba2;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .search-box {
-                flex-direction: column;
-            }
-
-            table {
-                font-size: 12px;
-            }
-
-            th, td {
-                padding: 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <h1>🏢 Sistema de Hierarquia</h1>
-        <div class="navbar-user">
-            <span>{{ funcionario_logado.nome }}</span>
-            <a href="{% url 'dashboard' %}">Dashboard</a>
-            <a href="{% url 'logout' %}">Sair</a>
-        </div>
-    </nav>
-
-    <div class="container">
-        <div class="header">
-            <h2>Funcionários</h2>
-            {% if funcionario_logado.cargo.nivel == 1 %}
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h2>Funcionários</h2>
+        {# Permissão para adicionar (Níveis 1-4) #}
+        {% if perms.hierarquia.add_funcionario %} 
             <a href="{% url 'cadastrar_funcionario' %}" class="btn">+ Novo Funcionário</a>
-            {% endif %}
-        </div>
-
-        <div class="search-box">
-            <form method="GET" style="display: flex; gap: 10px; width: 100%;">
-                <input type="text" name="busca" placeholder="Buscar por nome..." value="{{ busca }}">
-                <button type="submit">🔍 Buscar</button>
-            </form>
-        </div>
-
-        {% if funcionarios %}
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>CPF</th>
-                        <th>Cargo</th>
-                        <th>Setor</th>
-                        <th>Data Admissão</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for func in funcionarios %}
-                    <tr>
-                        <td><strong>{{ func.nome }}</strong></td>
-                        <td>{{ func.cpf }}</td>
-                        <td><span class="cargo-badge">{{ func.cargo.nome }}</span></td>
-                        <td>
-                            {% for setor in func.setor.all %}
-                                <span class="setor-badge">{{ setor.nome }}</span>
-                            {% endfor %}
-                        </td>
-                        <td>{{ func.data_admissao|date:"d/m/Y" }}</td>
-                        <td>
-                            <a href="{% url 'detalhar_funcionario' func.id %}" class="action-link">Ver Detalhes →</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="table-container">
-            <div class="empty-state">
-                <div class="empty-state-icon">👤</div>
-                <p>Nenhum funcionário encontrado</p>
-            </div>
-        </div>
         {% endif %}
     </div>
-</body>
-</html>
 
+    <div class="search-box">
+        <form method="GET"> {# Formulário engloba input e botão #}
+            <input type="text" name="busca" placeholder="Buscar por nome..." value="{{ busca }}">
+            <button type="submit">🔍 Buscar</button>
+        </form>
+    </div>
+
+    {% if funcionarios %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>Cargo</th>
+                    <th>Setores</th> {# Atualizado para plural #}
+                    <th>Data Admissão</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for func in funcionarios %}
+                <tr>
+                    <td><strong>{{ func.nome }}</strong></td>
+                    <td>{{ func.cpf }}</td>
+                    <td><span class="cargo-badge">{{ func.cargo.nome }}</span></td>
+                    <td>
+                        {% for setor in func.setor.all %}
+                            <span class="setor-badge">{{ setor.nome }}</span>
+                        {% empty %}
+                            - {# Mostra um traço se não houver setores #}
+                        {% endfor %}
+                    </td>
+                    <td>{{ func.data_admissao|date:"d/m/Y" }}</td>
+                    <td>
+                        <a href="{% url 'detalhar_funcionario' func.id %}" class="action-link">Ver Detalhes →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-container"> {# Mantém card branco mesmo vazio #}
+        <div class="empty-state">
+            <div class="empty-state-icon">👤</div>
+            <p>Nenhum funcionário encontrado{% if busca %} para "{{ busca }}"{% endif %}.</p> {# Mensagem melhorada #}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Botão Voltar não é necessário se a navegação é pela sidebar #}
+    {# <a href="{% url 'dashboard' %}" class="btn" style="margin-top: 20px;">← Voltar ao Dashboard</a> #}
+</div>
+{% endblock content %}

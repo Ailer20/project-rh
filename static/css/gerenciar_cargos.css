@@ -1,0 +1,100 @@
+/* Container específico para esta página */
+.container {
+    max-width: 1000px; /* Largura um pouco maior para a tabela */
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* Estilos do cabeçalho da página */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header h2 {
+    font-size: 28px;
+}
+
+/* Estilos gerais para tabelas (pode ir para base_styles.css se for usar em mais lugares) */
+.table-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Para o border-radius funcionar com a tabela */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse; /* Remove espaços entre células */
+}
+
+thead {
+    background: #f5f7fa; /* Fundo cinza claro para cabeçalho */
+    border-bottom: 2px solid #e0e0e0;
+}
+
+th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0; /* Linha separadora entre linhas */
+    vertical-align: top; /* Alinha conteúdo no topo se for longo */
+}
+
+/* Remove borda da última linha */
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background: #f9f9f9; /* Fundo leve ao passar o mouse */
+}
+
+/* Badge específico para Nível */
+.nivel-badge {
+    display: inline-block;
+    background: #e8eaf6; /* Fundo azul claro */
+    color: #667eea; /* Texto azul */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap; /* Impede que o texto quebre */
+}
+
+/* Estado vazio para a tabela */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* Botão (se houver botões específicos, se não, pode usar .btn de base_styles.css) */
+/* .btn { ... } */
+
+/* Ajustes responsivos para a tabela */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    /* Em telas pequenas, pode ser útil reduzir o padding */
+    th, td {
+        padding: 10px;
+    }
+
+    /* Opcional: Esconder colunas menos importantes em telas pequenas */
+    /* th:nth-child(3), td:nth-child(3) { display: none; } */ /* Esconde Descrição */
+}

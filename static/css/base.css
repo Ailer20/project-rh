@@ -1,0 +1,245 @@
+/* --- :root Variables (Light Theme - Default) --- */
+:root {
+    --sidebar-width-expanded: 250px;
+    --sidebar-width-collapsed: 70px; /* Width for icons only */
+
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #f8f9fa;
+    --bg-navbar: #2F4673;
+    --bg-sidebar: #2F4673;
+    --bg-hover: rgba(217, 217, 217, 0.05); /* Sidebar hover background */
+    --bg-active: rgba(217, 217, 217, 0.1); /* Sidebar active background */
+
+    --text-primary: #0D0D0D;
+    --text-secondary: #64758C;
+    --text-muted: #949BA6;
+    --text-navbar: #D9D9D9;
+    --text-sidebar: #D9D9D9;
+    --text-sidebar-hover: #FFFFFF;
+
+    --border-color: #D9D9D9;
+    --border-accent: #949BA6; /* Sidebar active indicator */
+
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --shadow-navbar: rgba(0, 0, 0, 0.15);
+
+    --accent-color: #64758C;
+}
+
+/* --- Dark Theme Variables --- */
+/* --- Dark Theme Variables --- */
+body.dark-theme {
+    --bg-primary: #1a1a1a;       /* Slightly lighter dark for cards/elements */
+    --bg-secondary: #0D0D0D;     /* Darkest for main content background */
+    --bg-navbar: #2F4673;        /* Dark Blue */
+    --bg-sidebar: #2F4673;       /* Dark Blue */
+    --bg-hover: rgba(148, 155, 166, 0.15); /* Subtle overlay using #949BA6 transparency for hover */
+    --bg-active: rgba(148, 155, 166, 0.25); /* Slightly stronger overlay for active */
+
+    --text-primary: #D9D9D9;     /* Light Gray for main text */
+    --text-secondary: #949BA6;    /* Mid Gray for less important text */
+    --text-muted: #64758C;       /* Mid Blue-Gray for subtle text (like sidebar header) */
+    --text-navbar: #D9D9D9;      /* Light Gray for navbar text */
+    --text-sidebar: #D9D9D9;     /* Light Gray for sidebar text */
+    --text-sidebar-hover: #FFFFFF; /* White for sidebar text hover/active */
+
+    --border-color: #64758C;     /* Mid Blue-Gray for borders */
+    --border-accent: #D9D9D9;    /* Light Gray for sidebar active indicator */
+
+    --shadow-color: rgba(217, 217, 217, 0.05); /* Subtle light shadow */
+    --shadow-navbar: rgba(217, 217, 217, 0.1); /* Slightly stronger light shadow */
+
+    --accent-color: #D9D9D9;     /* Light Gray as accent */
+}
+
+/* --- Global Styles --- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+    font-size: 16px;
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow: hidden; /* Prevent body scroll when sidebar scrolls */
+}
+
+/* --- Navbar Styles --- */
+.navbar {
+    background-color: var(--bg-navbar);
+    color: var(--text-navbar);
+    padding: 0 40px;
+    height: 65px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px var(--shadow-navbar);
+    position: relative;
+    z-index: 1001;
+}
+.navbar h1 { font-size: 20px; font-weight: 600; color: #FFFFFF; }
+.navbar-user { display: flex; align-items: center; gap: 25px; }
+.navbar-user span { font-size: 14px; color: var(--text-muted); }
+.navbar-user a, .theme-toggle-btn {
+    color: var(--text-navbar); text-decoration: none; padding: 8px 12px;
+    border-radius: 4px; font-size: 14px; font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    cursor: pointer; background: none; border: none; font-family: inherit;
+}
+.navbar-user a:hover, .theme-toggle-btn:hover {
+    background-color: rgba(217, 217, 217, 0.1); color: #FFFFFF;
+}
+
+/* --- Page Layout --- */
+.page-container {
+    display: flex;
+    height: calc(100vh - 65px);
+}
+
+/* --- Sidebar Styles --- */
+.sidebar {
+    width: var(--sidebar-width-expanded); /* Use variable */
+    background: var(--bg-sidebar);
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll when collapsing */
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease; /* Smooth width transition */
+    z-index: 1000;
+    position: relative; /* Needed for absolute positioning of pin button */
+}
+
+/* Header within sidebar to hold title and pin button */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 25px 15px 25px;
+}
+
+.sidebar-header h3 {
+    padding: 0; /* Remove padding from h3 itself */
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    white-space: nowrap; /* Prevent wrapping */
+    opacity: 1; /* Default visible */
+    transition: opacity 0.2s ease;
+}
+
+/* Pin Button */
+.pin-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    transition: color 0.2s ease, transform 0.2s ease;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+.pin-btn:hover {
+    color: var(--text-sidebar-hover);
+    transform: scale(1.1);
+}
+
+/* Menu Items */
+.sidebar .menu-items { display: flex; flex-direction: column; padding-bottom: 20px; }
+.sidebar .menu-item {
+    padding: 12px 25px; text-decoration: none; color: var(--text-sidebar);
+    font-weight: 500; display: flex; align-items: center; gap: 12px;
+    font-size: 15px; border-left: 3px solid transparent; margin-right: 1px;
+    transition: background-color 0.2s ease, color 0.2s ease, border-left-color 0.2s ease;
+    white-space: nowrap; /* Prevent text wrapping */
+}
+.sidebar .menu-item i {
+    font-size: 18px; width: 20px; text-align: center; color: var(--text-muted);
+    transition: color 0.2s ease;
+    flex-shrink: 0; /* Prevent icon from shrinking */
+}
+.sidebar .menu-item .menu-text {
+    opacity: 1; /* Default visible */
+    transition: opacity 0.2s ease 0.1s; /* Slight delay on fade out */
+    white-space: nowrap;
+}
+
+/* Hover/Active states */
+.sidebar .menu-item:hover { background-color: var(--bg-hover); color: var(--text-sidebar-hover); }
+.sidebar .menu-item:hover i { color: var(--text-sidebar-hover); }
+.sidebar .menu-item.active {
+    background-color: var(--bg-active); color: var(--text-sidebar-hover);
+    border-left-color: var(--border-accent); font-weight: 600;
+}
+.sidebar .menu-item.active i { color: var(--text-sidebar-hover); }
+
+/* --- Collapsed Sidebar State --- */
+.sidebar.sidebar-collapsed {
+    width: var(--sidebar-width-collapsed); /* Use variable */
+}
+/* Hide text and header smoothly when collapsed */
+.sidebar.sidebar-collapsed .menu-text,
+.sidebar.sidebar-collapsed .sidebar-header h3,
+.sidebar.sidebar-collapsed .pin-btn { /* Hide pin button when collapsed */
+    opacity: 0;
+    width: 0; /* Helps prevent layout shifts */
+    overflow: hidden; /* Ensure it's fully hidden */
+    pointer-events: none; /* Prevent interaction */
+}
+/* Center icon when collapsed */
+.sidebar.sidebar-collapsed .menu-item {
+    justify-content: center; /* Center icon horizontally */
+    padding-left: 0; /* Remove left padding */
+    padding-right: 0; /* Remove right padding */
+    gap: 0; /* Remove gap */
+}
+.sidebar.sidebar-collapsed .menu-item i {
+    margin: 0; /* Ensure no extra margin on icon */
+}
+
+/* --- Main Content --- */
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px; /* Verifique se este valor está bom */
+    background-color: var(--bg-secondary);
+    margin-left: var(--sidebar-width-expanded);
+    transition: margin-left 0.3s ease;
+}
+.sidebar.sidebar-collapsed ~ .main-content {
+    margin-left: var(--sidebar-width-collapsed);
+}
+.container {
+    max-width: 1000px; /* Tente 1100px, 1000px, 960px, etc. */
+    margin: 0 auto;
+    padding: 0;
+}
+/* Generic Card Style */
+.card {
+    background: var(--bg-primary); border-radius: 10px; padding: 25px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    margin-bottom: 20px;
+}
+/* Add other styles using variables */
+
+
+/* --- Responsive Styles --- */
+@media (max-width: 992px) {
+    /* Hide sidebar completely and remove margin */
+    .sidebar { width: 0; overflow: hidden; padding-top: 0; border-right: none; }
+    .sidebar.sidebar-collapsed ~ .main-content,
+    .sidebar ~ .main-content {
+        margin-left: 0; /* No margin when sidebar is hidden */
+    }
+    .page-container { height: auto; }
+    .main-content { padding: 20px; }
+}
+@media (max-width: 768px) {
+    .navbar { padding: 15px 20px; height: auto; }
+    .main-content { padding: 15px; }
+}

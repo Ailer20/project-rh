@@ -1,0 +1,193 @@
+/* Container específico para esta página */
+.container {
+    max-width: 1200px; /* Largura maior para a tabela */
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* Estilos do cabeçalho da página */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header h2 {
+    font-size: 28px;
+}
+
+/* Estilos da caixa de busca */
+.search-box {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    display: flex;
+    gap: 10px;
+}
+
+.search-box form { /* Garante que o form ocupe o espaço */
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.search-box input {
+    flex: 1; /* Input ocupa a maior parte do espaço */
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.search-box button {
+    background: #667eea; /* Cor primária */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+.search-box button:hover {
+    background: #5a6ccb; /* Tom mais escuro no hover */
+}
+
+/* Estilos gerais para tabelas (Reutilizados - podem ir para base_styles.css) */
+.table-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Para o border-radius funcionar com a tabela */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse; /* Remove espaços entre células */
+}
+
+thead {
+    background: #f5f7fa; /* Fundo cinza claro para cabeçalho */
+    border-bottom: 2px solid #e0e0e0;
+}
+
+th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0; /* Linha separadora entre linhas */
+    vertical-align: middle; /* Alinha verticalmente no meio */
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background: #f9f9f9; /* Fundo leve ao passar o mouse */
+}
+
+/* Badges específicos */
+.cargo-badge {
+    display: inline-block;
+    background: #e8eaf6; /* Azul claro */
+    color: #667eea; /* Azul */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.setor-badge {
+    display: inline-block;
+    background: #f3e5f5; /* Roxo claro */
+    color: #764ba2; /* Roxo */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-right: 4px; /* Espaço entre badges de setor */
+    margin-bottom: 4px; /* Espaço se quebrar linha */
+}
+
+/* Link de Ação na tabela */
+.action-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s;
+    white-space: nowrap;
+}
+
+.action-link:hover {
+    color: #764ba2; /* Roxo no hover */
+    text-decoration: underline;
+}
+
+/* Estado vazio para a tabela */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+/* Botão (Se não estiver no base_styles.css) */
+.btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-block; /* Importante para o botão funcionar como link */
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .search-box {
+        flex-direction: column;
+    }
+
+    th, td {
+        padding: 10px;
+        font-size: 12px; /* Reduz fonte em telas menores */
+    }
+
+    /* Opcional: Esconder colunas em telas muito pequenas */
+    /* Exemplo: Esconder CPF */
+    /* th:nth-child(2), td:nth-child(2) { display: none; } */
+}
