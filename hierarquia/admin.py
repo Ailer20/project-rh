@@ -1,3 +1,5 @@
+# hierarquia/admin.py
+
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources, fields
@@ -40,7 +42,7 @@ class SetorAdmin(ImportExportModelAdmin):
     list_display = ('nome', 'descricao')
     search_fields = ('nome',)
 
-# --- Resource DETALHADO para Funcionários (CORRIGIDO) ---
+# --- Resource DETALHADO para Funcionários (Corrigido e Validado) ---
 class FuncionarioResource(resources.ModelResource):
     cargo = fields.Field(
         column_name='cargo',
@@ -52,25 +54,28 @@ class FuncionarioResource(resources.ModelResource):
         attribute='setor',     # Nome do campo ManyToMany no Model
         widget=ManyToManyWidget(Setor, field='nome', separator=',')) # Busca por 'nome', separa por ','
 
+    # Widget ForeignKeyWidget lida bem com campos vazios se o model permitir (null=True)
     centro_servico = fields.Field(
         column_name='centro_servico',
         attribute='centro_servico',
-        widget=ForeignKeyWidget(CentroServico, 'nome')) # Busca pelo nome
+        widget=ForeignKeyWidget(CentroServico, 'nome'))
 
+    # Widget ForeignKeyWidget lida bem com campos vazios se o model permitir (null=True)
     usuario = fields.Field(
         column_name='usuario',
         attribute='usuario',
-        widget=ForeignKeyWidget(User, User.USERNAME_FIELD)) # Busca pelo username
+        widget=ForeignKeyWidget(User, User.USERNAME_FIELD))
 
+    # Widget DateWidget lida bem com campos vazios se o model permitir (null=True)
     data_nascimento = fields.Field(
         column_name='data_nascimento',
         attribute='data_nascimento',
-        widget=DateWidget(format='%d/%m/%Y')) # Espera DD/MM/YYYY
+        widget=DateWidget(format='%d/%m/%Y'))
 
     data_admissao = fields.Field(
         column_name='data_admissao',
         attribute='data_admissao',
-        widget=DateWidget(format='%d/%m/%Y')) # Espera DD/MM/YYYY
+        widget=DateWidget(format='%d/%m/%Y')) # Obrigatório
 
     ativo = fields.Field(
         column_name='ativo',
@@ -91,7 +96,6 @@ class FuncionarioResource(resources.ModelResource):
         report_skipped = True
         # Se um Cargo, Setor, CentroServico ou Usuario não for encontrado,
         # a linha inteira será pulada e um erro será mostrado na visualização.
-        # Defina para False se preferir que ele crie o funcionário mesmo assim (pode dar erro de FK).
         skip_diff = True
         # Coleta erros durante a importação "seca" (dry run)
         collect_failed_rows = True
@@ -119,7 +123,7 @@ class CentroServicoAdmin(admin.ModelAdmin): # Herda de admin.ModelAdmin padrão
     list_filter = ('setor',)
     search_fields = ('nome',)
     # Se houver muitos Setores, usar raw_id_fields pode melhorar a performance
-    # raw_id_fields = ('setor',)
+    raw_id_fields = ('setor',) # Adicionado para melhor performance
 
 @admin.register(Requisicao)
 class RequisicaoAdmin(admin.ModelAdmin): # Herda de admin.ModelAdmin padrão
