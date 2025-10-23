@@ -45,15 +45,26 @@
                 <div class="info-value">Nível {{ funcionario.cargo.nivel }}</div>
             </div>
             <div class="info-item">
-                <div class="info-label">Setores</div> {# Corrigido para plural #}
+                <div class="info-label">Setor</div>
                 <div class="info-value">
-                    {% for setor in funcionario.setor.all %}
-                        {{ setor.nome }}{% if not forloop.last %}, {% endif %}
-                    {% empty %}
-                        Nenhum setor associado.
+                     {% if funcionario.setor_primario %}
+                        {{ funcionario.setor_primario.nome }}
+                    {% else %}
+                        <span style="color: #999;">Nenhum</span>
+                    {% endif %}
+                </div>
+            </div>
+            {# Opcional: Adicionar exibição dos setores responsáveis #}
+            {% if funcionario.setores_responsaveis.exists %}
+            <div class="info-item" style="grid-column: 1 / -1;"> {# Ocupa largura total #}
+                <div class="info-label">Setores Responsáveis</div>
+                <div class="info-value">
+                    {% for setor_resp in funcionario.setores_responsaveis.all %}
+                        {{ setor_resp.nome }}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                 </div>
             </div>
+            {% endif %}
             {% if funcionario.centro_servico %}
             <div class="info-item">
                 <div class="info-label">Centro de Serviço</div>

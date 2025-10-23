@@ -14,24 +14,34 @@
 
     <div class="cards-grid">
         <div class="card">
-            <div class="card-icon">👥</div>
-            <div class="card-title">Total de Funcionários</div>
-            <div class="card-value">{{ total_funcionarios }}</div>
+            {% if funcionario.cargo.nivel == 1 %}
+                <div class="card-title">Total de Funcionários</div>
+            {% elif funcionario.cargo.nivel <= 3 %}
+                <div class="card-title">Funcionários nos Setores Resp.</div>
+            {% else %}
+                 <div class="card-title">Funcionários no Setor</div>
+            {% endif %}
+            <div class="card-value">{{ total_funcionarios }}</div> {# Usa a variável calculada na view #}
         </div>
         <div class="card">
-            <div class="card-icon">💼</div>
-            <div class="card-title">Cargos Cadastrados</div>
-            <div class="card-value">{{ total_cargos }}</div>
+            {% if funcionario.cargo.nivel == 1 %}
+                <div class="card-title">Total de Cargos</div>
+            {% elif funcionario.cargo.nivel <= 3 %}
+                <div class="card-title">Cargos nos Setores Resp.</div>
+            {% else %}
+                 <div class="card-title">Cargos no Setor</div>
+            {% endif %}
+            <div class="card-value">{{ total_cargos }}</div> {# Usa a variável calculada na view #}
         </div>
         <div class="card">
-            <div class="card-icon">🏢</div>
-            <div class="card-title">Setores</div>
-            <div class="card-value">{{ total_setores }}</div>
+            <div class="card-title">{{ setores_titulo_card }}</div>
+            <div class="card-value {% if is_setor_name %}text-value{% endif %}">
+                {{ setores_valor_card }}
+            </div>
         </div>
         <div class="card">
-            <div class="card-icon">⏳</div>
-            <div class="card-title">Requisições Pendentes</div>
-            <div class="card-value">{{ requisicoes_pendentes }}</div>
+             <div class="card-title">Requisições Pendentes</div>
+            <div class="card-value">{{ requisicoes_pendentes }}</div> {# Usa a variável calculada na view #}
         </div>
     </div>
 
@@ -39,13 +49,21 @@
         <h3>Informações do Seu Perfil</h3>
         <p><strong>Nome:</strong> {{ funcionario.nome }}</p> 
         <p><strong>Cargo:</strong> {{ funcionario.cargo.nome }} <span class="badge">Nível {{ funcionario.cargo.nivel }}</span></p>
-        <p><strong>Setores:</strong>
-            {% for setor in funcionario.setor.all %}
-                {{ setor.nome }}{% if not forloop.last %}, {% endif %}
-            {% empty %}
-                Nenhum setor associado.
+        <p><strong>Setor:</strong> 
+            {% if funcionario.setor_primario %}
+                {{ funcionario.setor_primario.nome }}
+            {% else %}
+                <span style="color: #999;">Nenhum</span> {# Ou deixe em branco #}
+            {% endif %}
+        </p>
+        {# Opcional: Mostrar setores responsáveis também #}
+        {% if funcionario.setores_responsaveis.exists %}
+        <p><strong>Setores Responsáveis:</strong>
+            {% for setor_resp in funcionario.setores_responsaveis.all %}
+                {{ setor_resp.nome }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </p>
+        {% endif %}
         <p><strong>Data de Admissão:</strong> {{ funcionario.data_admissao|date:"d/m/Y" }}</p>
         {% if funcionario.centro_servico %}
         <p><strong>Centro de Serviço:</strong> {{ funcionario.centro_servico.nome }}</p>

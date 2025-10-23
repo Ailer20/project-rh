@@ -1,0 +1,140 @@
+/* static/css/login.css - Light Theme Tech */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* --- Fundo e Animação --- */
+#particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1; /* Atrás */
+}
+
+body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    color: #0D0D0D; /* Cor texto padrão (escura) */
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #f8f9fa; /* Cor de fundo clara (fallback) */
+    position: relative;
+    z-index: 0;
+    overflow: hidden;
+}
+
+/* --- Container Principal --- */
+.login-container {
+    position: relative;
+    z-index: 2; /* Na frente */
+    background: #FFFFFF; /* Fundo branco */
+    border-radius: 10px; /* Cantos suavemente arredondados */
+    /* Sombra mais definida */
+    box-shadow: 0 5px 25px rgba(100, 117, 140, 0.2); /* Sombra usa cor #64758C */
+    width: 100%;
+    max-width: 420px;
+    padding: 45px 40px;
+    text-align: center;
+    color: #0D0D0D;
+    border-top: 4px solid #2F4673; /* Borda azul escura no topo */
+}
+
+/* --- Cabeçalho --- */
+.login-header {
+    margin-bottom: 35px;
+}
+.login-header .icon { /* Estilo para o ícone do header */
+    font-size: 40px;
+    color: #2F4673; /* Azul escuro */
+    margin-bottom: 15px;
+    display: inline-block; /* Permite margem */
+}
+.login-header h1 {
+    color: #0D0D0D; /* Texto escuro */
+    font-size: 26px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.login-header p {
+    color: #64758C; /* Cinza azulado */
+    font-size: 16px;
+}
+
+/* --- Formulário --- */
+.form-group {
+    margin-bottom: 25px;
+    text-align: left;
+}
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #64758C; /* Cinza azulado */
+    font-weight: 500;
+    font-size: 14px;
+}
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid #D9D9D9; /* Cinza claro */
+    border-radius: 6px; /* Cantos levemente arredondados */
+    font-size: 16px;
+    background-color: #f8f9fa; /* Fundo secundário claro (diferencia do card) */
+    color: #0D0D0D; /* Texto escuro */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+input::placeholder {
+    color: #949BA6; /* Cinza médio */
+    opacity: 0.8;
+}
+input[type="text"]:focus,
+input[type="password"]:focus {
+    outline: none;
+    border-color: #64758C; /* Cinza azulado */
+    background-color: #FFFFFF; /* Fundo branco ao focar */
+    box-shadow: 0 0 0 3px rgba(100, 117, 140, 0.15); /* Sombra usa RGB de #64758C */
+}
+
+/* --- Opções de Senha --- */
+.password-options { display: flex; justify-content: flex-end; margin-top: 8px; margin-bottom: 25px; }
+.forgot-password { color: #2F4673; font-size: 13px; text-decoration: none; font-weight: 500; }
+.forgot-password:hover { text-decoration: underline; }
+
+/* --- Mensagem de Erro --- */
+.error-message {
+    background-color: #f8d7da; color: #721c24; padding: 12px 15px;
+    border-radius: 6px; margin-bottom: 20px; font-size: 14px;
+    border: 1px solid #f5c6cb; text-align: left;
+}
+
+/* --- Botão Principal --- */
+button[type="submit"] {
+    width: 100%; padding: 14px; background-color: #2F4673; /* Azul escuro */
+    color: #FFFFFF; border: none; border-radius: 6px; font-size: 16px;
+    font-weight: 600; cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    margin-top: 10px;
+    box-shadow: 0 2px 5px rgba(47, 70, 115, 0.3); /* Sombra sutil do botão */
+}
+button[type="submit"]:hover {
+    background-color: #4a6296; /* Azul mais claro */
+    box-shadow: 0 4px 10px rgba(47, 70, 115, 0.4); /* Sombra mais forte no hover */
+    transform: translateY(-1px); /* Leve elevação */
+}
+button[type="submit"]:active { transform: scale(0.98) translateY(0); box-shadow: none; }
+
+/* --- Rodapé --- */
+.login-footer { text-align: center; margin-top: 30px; color: #949BA6; font-size: 12px; }
+
+/* --- Responsividade --- */
+@media (max-width: 480px) {
+    .login-container { padding: 40px 30px; }
+    .login-header h1 { font-size: 26px; }
+}

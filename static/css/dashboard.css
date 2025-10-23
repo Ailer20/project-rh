@@ -65,6 +65,12 @@
     letter-spacing: 0.5px;
 }
 
+.card-value.text-value {
+    font-size: 20px;
+    font-weight: 500; /* Pode ajustar o peso da fonte também */
+    /* Ajuste line-height se necessário para alinhar com outros cards */
+    line-height: 1.3; 
+}
 .card-value {
     font-size: 36px;
     font-weight: bold;

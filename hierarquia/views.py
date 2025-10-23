@@ -8,7 +8,6 @@ from django.db.models import Q
 from .models import Funcionario, Cargo, Setor, CentroServico, Requisicao
 from datetime import datetime
 from django.contrib.auth.models import User, Permission 
-
 # Adicione esta linha inteira
 from django.contrib.contenttypes.models import ContentType
 
@@ -38,218 +37,273 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def dashboard(request):
-    """View principal do dashboard"""
+    """(ATUALIZADO) View principal do dashboard com dados baseados no nível."""
     try:
         funcionario = request.user.funcionario
+        if not funcionario.cargo:
+             return render(request, 'hierarquia/sem_acesso.html', {'mensagem': 'Seu usuário não está associado a um cargo.'})
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
-    
-    # Dados para o dashboard
+
+    nivel = funcionario.cargo.nivel
+
+    # Variáveis para os cards (inicializadas)
+    total_funcionarios_visiveis = 0
+    total_cargos_visiveis = 0
+    setores_titulo_card = "Informação Setor"
+    setores_valor_card = "N/A"
+    requisicoes_pendentes_count = 0
+    # --- ADICIONE A INICIALIZAÇÃO AQUI ---
+    is_setor_name = False # Define um valor padrão (False)
+    # ------------------------------------
+
+    # Lógica de cálculo baseada no nível
+    if nivel == 1: # Diretor
+        setores_titulo_card = "Total de Setores"
+        setores_valor_card = Setor.objects.count()
+        is_setor_name = False # Sobrescreve se necessário
+        # ... (restante)
+    elif nivel == 2 or nivel == 3: # Gerente ou Coordenador
+        setores_titulo_card = "Setores Responsáveis"
+        setores_responsabilidade = funcionario.setores_responsaveis.all()
+        setores_valor_card = setores_responsabilidade.count()
+        is_setor_name = False # Sobrescreve se necessário
+        # ... (restante)
+    elif nivel >= 4: # Supervisor ou ADM/Analista (Nível 5+)
+        setores_titulo_card = "Meu Setor Principal"
+        meu_setor = funcionario.setor_primario
+        if meu_setor:
+            setores_valor_card = meu_setor.nome
+            is_setor_name = True # Sobrescreve se necessário
+            # ... (restante)
+        else:
+            setores_valor_card = "Nenhum"
+            is_setor_name = True # Sobrescreve se necessário
+            # ... (restante)
+
+    # Monta o contexto final
     context = {
         'funcionario': funcionario,
-        'total_funcionarios': Funcionario.objects.filter(ativo=True).count(),
-        'total_cargos': Cargo.objects.count(),
-        'total_setores': Setor.objects.count(),
-        'requisicoes_pendentes': Requisicao.objects.filter(status='pendente').count(),
+        'total_funcionarios': total_funcionarios_visiveis,
+        'total_cargos': total_cargos_visiveis,
+        'setores_titulo_card': setores_titulo_card,
+        'setores_valor_card': setores_valor_card,
+        'requisicoes_pendentes': requisicoes_pendentes_count,
+        'is_setor_name': is_setor_name, # Agora is_setor_name sempre terá um valor
     }
-    
+
     return render(request, 'hierarquia/dashboard.html', context)
 
 @login_required(login_url='login')
-def listar_funcionarios_por_setor(request, setor_id): # Nome e parâmetro alterados
-    """View para listar funcionários DE UM SETOR ESPECÍFICO."""
+def listar_funcionarios_por_setor(request, setor_id):
+    """(ATUALIZADO) View para listar funcionários de um setor específico."""
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
 
-    # Pega o setor específico ou retorna erro 404 se não existir
     setor = get_object_or_404(Setor, id=setor_id)
 
-    # Verifica permissão: Diretor pode ver qualquer setor,
-    # outros só podem ver setores aos quais pertencem.
-    setores_permitidos = funcionario_logado.setor.all()
-    if funcionario_logado.cargo.nivel > 1 and setor not in setores_permitidos:
+    # (ATUALIZADO) Verifica permissão: Diretor, ou se é setor primário ou responsável
+    permitido = False
+    if funcionario_logado.cargo.nivel == 1:
+        permitido = True
+    elif funcionario_logado.setor_primario == setor:
+        permitido = True
+    elif funcionario_logado.setores_responsaveis.filter(pk=setor.pk).exists():
+        permitido = True
+
+    if not permitido:
          return render(request, 'hierarquia/sem_permissao.html', {'mensagem': f'Você não tem permissão para ver funcionários do setor "{setor.nome}".'})
 
-    # Filtra funcionários ATIVOS e DO SETOR específico
-    funcionarios = Funcionario.objects.filter(ativo=True, setor=setor)
+    # (ATUALIZADO) Filtra funcionários ATIVOS cujo SETOR PRIMÁRIO é o setor específico
+    funcionarios = Funcionario.objects.filter(ativo=True, setor_primario=setor)
 
-    # Aplica busca por nome, se houver
     busca = request.GET.get('busca', '')
     if busca:
         funcionarios = funcionarios.filter(nome__icontains=busca)
 
     context = {
         'funcionario_logado': funcionario_logado,
-        'funcionarios': funcionarios.order_by('nome'), # Ordena por nome
-        'setor': setor, # Passa o objeto setor para o template
+        'funcionarios': funcionarios.order_by('nome'),
+        'setor': setor,
         'busca': busca,
     }
-
     return render(request, 'hierarquia/listar_funcionarios.html', context)
 
 @login_required(login_url='login')
 def listar_setores_funcionarios(request):
-    """View para listar os setores que o usuário pode ver."""
+    """(ATUALIZADO) View para listar os setores que o usuário pode ver."""
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
 
-    # Determina quais setores mostrar
+    setores_visiveis = Setor.objects.none() # Começa vazio
+
     if funcionario_logado.cargo.nivel == 1: # Diretor vê todos
-        setores = Setor.objects.all().order_by('nome')
-    else: # Outros níveis veem apenas os seus setores
-        setores = funcionario_logado.setor.all().order_by('nome')
+        setores_visiveis = Setor.objects.all()
+    else:
+        # Inclui o setor primário do usuário (se tiver)
+        if funcionario_logado.setor_primario:
+            setores_visiveis = setores_visiveis | Setor.objects.filter(pk=funcionario_logado.setor_primario.pk)
+
+        # Inclui os setores pelos quais o usuário é responsável
+        if funcionario_logado.setores_responsaveis.exists():
+            setores_visiveis = setores_visiveis | funcionario_logado.setores_responsaveis.all()
 
     context = {
-        'funcionario_logado': funcionario_logado, # Passa para o base.html
-        'setores': setores,
+        'funcionario_logado': funcionario_logado,
+        # Ordena e garante setores únicos
+        'setores': setores_visiveis.distinct().order_by('nome'),
     }
-
     return render(request, 'hierarquia/listar_setores.html', context)
 
 
 @login_required(login_url='login')
 def cadastrar_funcionario(request):
-    """View para cadastrar novo funcionário"""
+    """(ATUALIZADO) View para cadastrar novo funcionário."""
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
-    
-    # --- CORREÇÃO 2 (Permissão) ---
-    # Trocamos a verificação de "nível 1" pela permissão real
-    # que definimos no models.py. (Níveis 1-4 terão ela)
+
     if not request.user.has_perm('hierarquia.add_funcionario'):
         return render(request, 'hierarquia/sem_permissao.html')
-    
+
     if request.method == 'POST':
+        # ... (pega nome, cpf, datas, cargo_id)
         nome = request.POST.get('nome')
         data_nascimento = request.POST.get('data_nascimento')
         cpf = request.POST.get('cpf')
         data_admissao = request.POST.get('data_admissao')
         cargo_id = request.POST.get('cargo')
-        
-        # --- CORREÇÃO 3 (Lógica ManyToMany) ---
-        # 1. Pegamos uma LISTA de IDs do formulário
-        setores_ids = request.POST.getlist('setor')
+        # --- MUDANÇA ---
+        setor_primario_id = request.POST.get('setor_primario') # Pega o ID do setor primário
+        setores_responsaveis_ids = request.POST.getlist('setores_responsaveis') # Opcional: Se adicionar campo no form
         centro_servico_id = request.POST.get('centro_servico')
-        
+        usuario_username = request.POST.get('usuario') # Opcional: Se adicionar campo no form
+
         try:
             cargo = Cargo.objects.get(id=cargo_id)
-            # 2. Buscamos TODOS os objetos Setor que estavam na lista
-            setores = Setor.objects.filter(id__in=setores_ids)
-            
-            centro_servico = None
-            if centro_servico_id:
-                centro_servico = CentroServico.objects.get(id=centro_servico_id)
-            
-            # 3. Criamos o funcionário SEM o setor
+            # --- MUDANÇA ---
+            setor_primario = Setor.objects.get(id=setor_primario_id) # Busca o setor primário
+            setores_responsaveis = Setor.objects.filter(id__in=setores_responsaveis_ids) # Busca setores responsáveis
+            centro_servico = CentroServico.objects.get(id=centro_servico_id) if centro_servico_id else None
+            usuario = User.objects.get(username=usuario_username) if usuario_username else None
+
+            # --- MUDANÇA ---
             funcionario = Funcionario.objects.create(
                 nome=nome,
                 data_nascimento=data_nascimento if data_nascimento else None,
                 cpf=cpf,
                 data_admissao=data_admissao,
                 cargo=cargo,
-                # 'setor' não pode ser passado no create()
+                setor_primario=setor_primario, # Associa setor primário
                 centro_servico=centro_servico,
+                usuario=usuario
+                # Ativo é default=True
             )
-            
-            # 4. Adicionamos os setores DEPOIS de criar o objeto
-            funcionario.setor.set(setores)
-            
-            return redirect('listar_funcionarios')
-        
-        except Exception as e:
-            context = {
+            # Associa setores responsáveis DEPOIS de criar
+            if setores_responsaveis.exists():
+                funcionario.setores_responsaveis.set(setores_responsaveis)
+
+            # Redireciona para a lista do setor recém-criado
+            return redirect('listar_funcionarios_por_setor', setor_id=setor_primario.id)
+
+        except (Cargo.DoesNotExist, Setor.DoesNotExist, CentroServico.DoesNotExist, User.DoesNotExist, Exception) as e:
+            # ...(código de tratamento de erro, recarregando o form com os dados)
+             context = {
                 'funcionario_logado': funcionario_logado,
                 'cargos': Cargo.objects.all(),
-                'setores': Setor.objects.all(),
+                'setores': Setor.objects.all(), # Para os selects
                 'centros_servico': CentroServico.objects.all(),
-                'error': str(e),
+                'error': f"Erro ao cadastrar: {e}", # Mensagem de erro mais clara
+                # Passar os valores submetidos de volta para o form é uma boa prática
+                'form_values': request.POST
             }
-            return render(request, 'hierarquia/cadastrar_funcionario.html', context)
-    
+             return render(request, 'hierarquia/cadastrar_funcionario.html', context)
+
+    # GET request
+    setor_preselecionado_id = request.GET.get('setor_id') # Pega ID da URL se veio do botão "+ Novo"
     context = {
         'funcionario_logado': funcionario_logado,
-        'cargos': Cargo.objects.all(),
-        'setores': Setor.objects.all(),
-        'centros_servico': CentroServico.objects.all(),
+        'cargos': Cargo.objects.all().order_by('nivel', 'nome'),
+        'setores': Setor.objects.all().order_by('nome'),
+        'centros_servico': CentroServico.objects.all().order_by('nome'),
+        'setor_preselecionado_id': setor_preselecionado_id, # Passa para o template
     }
-    
     return render(request, 'hierarquia/cadastrar_funcionario.html', context)
 
 
 @login_required(login_url='login')
 def detalhar_funcionario(request, funcionario_id):
-    """View para detalhar um funcionário"""
+    """(ATUALIZADO) View para detalhar um funcionário"""
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
-    
+
     funcionario = get_object_or_404(Funcionario, id=funcionario_id)
-    
-    # --- CORREÇÃO 4 (Lógica ManyToMany) ---
-    # Verificar permissão de visualização
-    
-    # 1. Pega os setores do gestor
-    setores_do_gestor = funcionario_logado.setor.all()
-    
-    # 2. Verifica se o funcionário detalhado compartilha PELO MENOS UM setor com o gestor
-    #    Usamos .values_list('id', flat=True) para performance
-    pertence_aos_setores = funcionario.setor.filter(
-        id__in=setores_do_gestor.values_list('id', flat=True)
-    ).exists()
-    
-    # 3. Se não for diretor E não compartilhar setores, bloqueia
-    if funcionario_logado.cargo.nivel > 1 and not pertence_aos_setores:
-        return render(request, 'hierarquia/sem_permissao.html')
-    
+
+    # (ATUALIZADO) Verificar permissão de visualização
+    permitido = False
+    if funcionario_logado.cargo.nivel == 1: # Diretor vê tudo
+        permitido = True
+    elif funcionario.setor_primario: # Se o funcionário visualizado tem setor primário...
+        if funcionario_logado.setor_primario == funcionario.setor_primario: # ...e é o mesmo do logado
+             permitido = True
+        elif funcionario_logado.setores_responsaveis.filter(pk=funcionario.setor_primario.pk).exists(): # ...ou o logado é responsável por ele
+             permitido = True
+    elif funcionario == funcionario_logado: # Permite ver a si mesmo
+        permitido = True
+
+
+    if not permitido:
+        return render(request, 'hierarquia/sem_permissao.html', {'mensagem': f'Você não tem permissão para ver detalhes de {funcionario.nome}.'})
+
     context = {
         'funcionario_logado': funcionario_logado,
         'funcionario': funcionario,
         'superiores': funcionario.obter_superiores(),
-        'subordinados': funcionario.obter_subordinados(),
+        # Passa False para não incluir subordinados de setores responsáveis aqui, talvez?
+        # Ou True para mostrar todos que ele gerencia. Decidi por True.
+        'subordinados': funcionario.obter_subordinados(incluir_responsaveis=True),
     }
-    
     return render(request, 'hierarquia/detalhar_funcionario.html', context)
 
 
 @login_required(login_url='login')
 def listar_requisicoes(request):
-    """View para listar requisições"""
+    """(REVISAR/ATUALIZAR) View para listar requisições"""
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
         return render(request, 'hierarquia/sem_acesso.html')
-    
-    # Filtrar requisições baseado na hierarquia
-    if funcionario_logado.cargo.nivel == 1:  # Diretor
+
+    requisicoes = Requisicao.objects.none()
+
+    if funcionario_logado.cargo.nivel == 1:
         requisicoes = Requisicao.objects.all()
     else:
-        # Mostra suas próprias requisições e as de seus subordinados
-        # (O método obter_subordinados() já foi corrigido no models.py)
-        subordinados = funcionario_logado.obter_subordinados()
-        requisicoes = Requisicao.objects.filter(
-            Q(solicitante=funcionario_logado) | Q(solicitante__in=subordinados)
-        ).distinct()
-    
-    # Filtrar por status
+        # Mostra suas próprias requisições
+        requisicoes = requisicoes | Requisicao.objects.filter(solicitante=funcionario_logado)
+        # Mostra requisições de subordinados (incluindo dos setores responsáveis)
+        subordinados = funcionario_logado.obter_subordinados(incluir_responsaveis=True)
+        if subordinados.exists():
+            requisicoes = requisicoes | Requisicao.objects.filter(solicitante__in=subordinados)
+
     status = request.GET.get('status', '')
     if status:
         requisicoes = requisicoes.filter(status=status)
-    
+
     context = {
         'funcionario_logado': funcionario_logado,
-        'requisicoes': requisicoes,
+        'requisicoes': requisicoes.distinct().order_by('-criado_em'),
         'status_filter': status,
     }
-    
     return render(request, 'hierarquia/listar_requisicoes.html', context)
-
+    
 
 @login_required(login_url='login')
 def criar_requisicao(request):

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 # ---------------------
 from django.core.validators import RegexValidator
-
+from django.db.models import Q
 # Validadores
 cpf_validator = RegexValidator(
     regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
@@ -81,104 +81,153 @@ class Funcionario(models.Model):
     cpf = models.CharField(max_length=14, unique=True, validators=[cpf_validator])
     data_admissao = models.DateField()
     cargo = models.ForeignKey(Cargo, on_delete=models.PROTECT, related_name='funcionarios')
-    setor = models.ManyToManyField(Setor, related_name='funcionarios')
+
+    # --- NOVOS CAMPOS DE SETOR ---
+    setor_primario = models.ForeignKey(
+        Setor,
+        on_delete=models.PROTECT, # Protege contra exclusão de setor com funcionários
+        related_name='funcionarios_primarios', # Nome para acesso reverso
+        verbose_name='Setor Principal',
+        null=True, # TEMPORARIAMENTE True para facilitar migração inicial, depois pode ser False
+        blank=True # TEMPORARIAMENTE True
+        # Considere null=False, blank=False depois que tudo estiver ajustado
+    )
+    setores_responsaveis = models.ManyToManyField(
+        Setor,
+        related_name='responsaveis', # Permite Setor.responsaveis.all()
+        blank=True, # Muitos funcionários não serão responsáveis por nenhum setor
+        verbose_name='Setores Responsáveis'
+    )
+    # --- FIM DOS NOVOS CAMPOS ---
+
     centro_servico = models.ForeignKey(CentroServico, on_delete=models.SET_NULL, null=True, blank=True, related_name='funcionarios')
     ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ['nome']
         verbose_name = 'Funcionário'
         verbose_name_plural = 'Funcionários'
-    
+
     def __str__(self):
-        return f"{self.nome} - {self.cargo.nome}"
+         # Mostra setor primário se existir
+        setor_str = f" - {self.setor_primario.nome}" if self.setor_primario else ""
+        return f"{self.nome} - {self.cargo.nome}{setor_str}"
 
+    # --- LÓGICA DE PERMISSÕES (mantida) ---
     def save(self, *args, **kwargs):
-        """ 
-        (LÓGICA DE PERMISSÃO)
-        Sobrescreve o 'save' para dar permissões de admin baseadas no cargo 
-        """
-        # Salva o funcionário primeiro
+        is_new = self._state.adding # Verifica se é um novo objeto
         super().save(*args, **kwargs)
-
-        # Se este funcionário está ligado a um usuário de login
         if self.usuario:
-            # Níveis 1 a 4 (Diretor, Gestor, Coordenador, Supervisor)
-            pode_gerenciar_equipe = self.cargo.nivel <= 4 
-            
-            # Dá acesso ao /admin/
+            pode_gerenciar_equipe = self.cargo.nivel <= 4
             self.usuario.is_staff = pode_gerenciar_equipe
-            
             try:
-                # Pega as permissões do modelo "Funcionario"
-                # (Agora ContentType e Permission estão importados)
                 content_type = ContentType.objects.get_for_model(Funcionario)
                 perm_add = Permission.objects.get(content_type=content_type, codename='add_funcionario')
                 perm_change = Permission.objects.get(content_type=content_type, codename='change_funcionario')
                 perm_view = Permission.objects.get(content_type=content_type, codename='view_funcionario')
-                
+
                 if pode_gerenciar_equipe:
                     self.usuario.user_permissions.add(perm_add, perm_change, perm_view)
-                else:
-                    self.usuario.user_permissions.remove(perm_add, perm_change, perm_view)
-                
-                self.usuario.save()
+                elif not is_new: # Só remove se não for novo (evita erro na criação)
+                     self.usuario.user_permissions.remove(perm_add, perm_change, perm_view)
+
+                # Salva o usuário apenas se houve mudança ou se é novo e precisa de permissão
+                if is_new or self.usuario.is_staff != pode_gerenciar_equipe:
+                     self.usuario.save()
 
             except (Permission.DoesNotExist, ContentType.DoesNotExist):
-                # Isso pode falhar na primeira migração. É seguro ignorar.
-                pass
-    
+                pass # Ignora se permissões não existem (primeira migração)
+
+    # --- MÉTODOS HIERÁRQUICOS ATUALIZADOS ---
     def obter_nivel_hierarquico(self):
         return self.cargo.nivel
-    
+
     def obter_superiores(self):
-        """ (CORRIGIDO) Retorna todos os superiores hierárquicos (em qualquer setor do funcionário) """
-        setores_do_funcionario = self.setor.all()
-        
-        superiores = Funcionario.objects.filter(
-            setor__in=setores_do_funcionario,
+        """
+        (CORRIGIDO NOVAMENTE) Retorna superiores hierárquicos:
+        1. Superiores (nível < atual) DENTRO do mesmo Setor Principal.
+        2. Superiores (nível < atual) que são RESPONSÁVEIS pelo Setor Principal do funcionário.
+        3. SEMPRE inclui Diretores (nível 1) ativos.
+        """
+        if not self.setor_primario:
+            # Se o funcionário não tem setor primário, apenas Diretores podem ser superiores.
+            return Funcionario.objects.filter(cargo__nivel=1, ativo=True).exclude(pk=self.pk).distinct().order_by('cargo__nivel')
+
+        # Condição 1: Superior no mesmo setor primário E nível menor
+        condicao_mesmo_setor = Q(
+            setor_primario=self.setor_primario,
             cargo__nivel__lt=self.cargo.nivel,
             ativo=True
-        ).distinct().order_by('cargo__nivel')
-        
-        if self.centro_servico:
-            superiores = superiores.filter(centro_servico=self.centro_servico)
-        
-        return superiores
-    
-    def obter_subordinados(self):
-        """ (CORRIGIDO) Retorna todos os subordinados hierárquicos (em qualquer setor do funcionário) """
-        setores_do_funcionario = self.setor.all()
-        
-        subordinados = Funcionario.objects.filter(
-            setor__in=setores_do_funcionario,
-            cargo__nivel__gt=self.cargo.nivel,
-            ativo=True
-        ).distinct().order_by('cargo__nivel')
-        
-        if self.centro_servico:
-            subordinados = subordinados.filter(centro_servico=self.centro_servico)
-            
-        return subordinados
-    
-    def obter_subordinados_diretos(self):
-        """ (CORRIGIDO) Retorna apenas os subordinados diretos (um nível abaixo) """
-        nivel_esperado = self.cargo.nivel + 1
-        setores_do_funcionario = self.setor.all()
-        
-        subordinados = Funcionario.objects.filter(
-            setor__in=setores_do_funcionario,
-            cargo__nivel=nivel_esperado,
-            ativo=True
-        ).distinct().order_by('nome')
-        
-        if self.centro_servico:
-            subordinados = subordinados.filter(centro_servico=self.centro_servico)
-            
-        return subordinados
+        )
 
+        # --- NOVA CONDIÇÃO ---
+        # Condição 2: Superior é RESPONSÁVEL pelo setor primário deste funcionário E tem nível menor
+        condicao_responsavel = Q(
+            setores_responsaveis=self.setor_primario, # Verifica se o setor_primario DESTE func está na lista M2M do OUTRO
+            cargo__nivel__lt=self.cargo.nivel,
+            ativo=True
+        )
+        # ---------------------
+
+        # Condição 3: É um Diretor (Nível 1) ativo
+        condicao_diretor = Q(
+            cargo__nivel=1,
+            ativo=True
+        )
+
+        # Combina as condições: (Mesmo Setor OU Responsável OU Diretor)
+        superiores = Funcionario.objects.filter(
+            condicao_mesmo_setor | condicao_responsavel | condicao_diretor
+        ).exclude(pk=self.pk).distinct().order_by('cargo__nivel')
+
+        # --- REMOÇÃO DO FILTRO DE CENTRO DE SERVIÇO ---
+        # O filtro por centro_servico aqui provavelmente não faz sentido,
+        # pois um gerente responsável ou um diretor não necessariamente
+        # compartilharão o mesmo centro de serviço. Removendo para clareza.
+        # Se precisar reintroduzir com lógica específica, pode ser feito.
+        # if self.centro_servico:
+        #     superiores = superiores.filter(centro_servico=self.centro_servico)
+        # -----------------------------------------------
+
+        return superiores
+
+    def obter_subordinados(self, incluir_responsaveis=True):
+        """
+        Retorna subordinados:
+        1. Com nível maior DENTRO do Setor Principal do funcionário.
+        2. Se incluir_responsaveis=True (padrão), também inclui todos os funcionários
+           cujo Setor Principal seja um dos Setores Responsáveis por este funcionário.
+        """
+        subordinados = Funcionario.objects.none() # QuerySet vazio inicial
+
+        # 1. Subordinados no setor primário
+        if self.setor_primario:
+            subordinados_primario = Funcionario.objects.filter(
+                setor_primario=self.setor_primario,
+                cargo__nivel__gt=self.cargo.nivel,
+                ativo=True
+            )
+            subordinados = subordinados | subordinados_primario
+
+        # 2. Subordinados nos setores responsáveis (se houver e incluir_responsaveis=True)
+        if incluir_responsaveis and self.setores_responsaveis.exists():
+            setores_resp = self.setores_responsaveis.all()
+            subordinados_responsaveis = Funcionario.objects.filter(
+                setor_primario__in=setores_resp,
+                # Não filtra por nível aqui, pois o gestor pode ser responsável por pares/superiores em outros setores?
+                # Vamos filtrar por nível > atual para consistência por enquanto.
+                cargo__nivel__gt=self.cargo.nivel,
+                ativo=True
+            ).exclude(pk=self.pk) # Garante não incluir a si mesmo
+            subordinados = subordinados | subordinados_responsaveis
+
+        # Aplica filtro de centro de serviço, se houver
+        if self.centro_servico:
+             subordinados = subordinados.filter(centro_servico=self.centro_servico)
+
+        return subordinados.distinct().order_by('setor_primario__nome', 'cargo__nivel', 'nome')
 
 class Requisicao(models.Model):
     """Modelo para representar requisições no sistema"""
