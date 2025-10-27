@@ -37,51 +37,75 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def dashboard(request):
-    """(ATUALIZADO) View principal do dashboard com dados baseados no nível."""
     try:
-        funcionario = request.user.funcionario
+        funcionario = Funcionario.objects.get(usuario=request.user)
         if not funcionario.cargo:
-             return render(request, 'hierarquia/sem_acesso.html', {'mensagem': 'Seu usuário não está associado a um cargo.'})
+            return render(request, 'hierarquia/sem_acesso.html', {'mensagem': 'Seu usuário não está associado a um cargo.'})
     except Funcionario.DoesNotExist:
-        return render(request, 'hierarquia/sem_acesso.html')
+        return render(request, 'hierarquia/sem_acesso.html', {'mensagem': 'Não foi encontrado um perfil de funcionário associado ao seu usuário.'})
 
     nivel = funcionario.cargo.nivel
 
-    # Variáveis para os cards (inicializadas)
     total_funcionarios_visiveis = 0
     total_cargos_visiveis = 0
     setores_titulo_card = "Informação Setor"
     setores_valor_card = "N/A"
     requisicoes_pendentes_count = 0
-    # --- ADICIONE A INICIALIZAÇÃO AQUI ---
-    is_setor_name = False # Define um valor padrão (False)
-    # ------------------------------------
+    is_setor_name = False
 
-    # Lógica de cálculo baseada no nível
-    if nivel == 1: # Diretor
+    if nivel == 1:
+        total_funcionarios_visiveis = Funcionario.objects.count()
+        total_cargos_visiveis = Cargo.objects.count() # Diretor vê todos os cargos
         setores_titulo_card = "Total de Setores"
         setores_valor_card = Setor.objects.count()
-        is_setor_name = False # Sobrescreve se necessário
-        # ... (restante)
-    elif nivel == 2 or nivel == 3: # Gerente ou Coordenador
-        setores_titulo_card = "Setores Responsáveis"
+        requisicoes_pendentes_count = Requisicao.objects.filter(status='pendente').count()
+
+    elif nivel <= 3:
         setores_responsabilidade = funcionario.setores_responsaveis.all()
-        setores_valor_card = setores_responsabilidade.count()
-        is_setor_name = False # Sobrescreve se necessário
-        # ... (restante)
-    elif nivel >= 4: # Supervisor ou ADM/Analista (Nível 5+)
+        if setores_responsabilidade.exists():
+            setores_titulo_card = "Setores Responsáveis"
+            setores_valor_card = setores_responsabilidade.count()
+            total_funcionarios_visiveis = Funcionario.objects.filter(setor_primario__in=setores_responsabilidade).count()
+            # ✅ CORREÇÃO APLICADA AQUI: Filtra Cargo via Funcionarios nos setores responsáveis
+            total_cargos_visiveis = Cargo.objects.filter(
+                funcionarios__setor_primario__in=setores_responsabilidade
+            ).distinct().count()
+            requisicoes_pendentes_count = Requisicao.objects.filter(
+                solicitante__setor_primario__in=setores_responsabilidade, status='pendente'
+            ).count()
+        else: # Sem setores responsáveis, usa o próprio setor
+            setores_titulo_card = "Meu Setor Principal"
+            meu_setor = funcionario.setor_primario
+            if meu_setor:
+                setores_valor_card = meu_setor.nome
+                is_setor_name = True
+                total_funcionarios_visiveis = Funcionario.objects.filter(setor_primario=meu_setor).count()
+                # ✅ CORREÇÃO APLICADA AQUI: Filtra Cargo via Funcionarios no setor primário
+                total_cargos_visiveis = Cargo.objects.filter(
+                    funcionarios__setor_primario=meu_setor
+                ).distinct().count()
+                requisicoes_pendentes_count = Requisicao.objects.filter(solicitante=funcionario, status='pendente').count()
+            else: # Sem setor primário
+                setores_valor_card = "Nenhum"; is_setor_name = True
+                total_funcionarios_visiveis = 1; total_cargos_visiveis = 1 # Apenas o próprio funcionário/cargo
+                requisicoes_pendentes_count = Requisicao.objects.filter(solicitante=funcionario, status='pendente').count()
+
+    else: # Níveis 4+
         setores_titulo_card = "Meu Setor Principal"
         meu_setor = funcionario.setor_primario
         if meu_setor:
             setores_valor_card = meu_setor.nome
-            is_setor_name = True # Sobrescreve se necessário
-            # ... (restante)
+            is_setor_name = True
+            total_funcionarios_visiveis = Funcionario.objects.filter(setor_primario=meu_setor).count()
+            # ✅ CORREÇÃO APLICADA AQUI: Filtra Cargo via Funcionarios no setor primário
+            total_cargos_visiveis = Cargo.objects.filter(
+                funcionarios__setor_primario=meu_setor
+            ).distinct().count()
         else:
-            setores_valor_card = "Nenhum"
-            is_setor_name = True # Sobrescreve se necessário
-            # ... (restante)
+            setores_valor_card = "Nenhum"; is_setor_name = True
+            total_funcionarios_visiveis = 1; total_cargos_visiveis = 1
+        requisicoes_pendentes_count = Requisicao.objects.filter(solicitante=funcionario, status='pendente').count()
 
-    # Monta o contexto final
     context = {
         'funcionario': funcionario,
         'total_funcionarios': total_funcionarios_visiveis,
@@ -89,7 +113,7 @@ def dashboard(request):
         'setores_titulo_card': setores_titulo_card,
         'setores_valor_card': setores_valor_card,
         'requisicoes_pendentes': requisicoes_pendentes_count,
-        'is_setor_name': is_setor_name, # Agora is_setor_name sempre terá um valor
+        'is_setor_name': is_setor_name,
     }
 
     return render(request, 'hierarquia/dashboard.html', context)
