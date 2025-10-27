@@ -42,9 +42,6 @@
                 <a href="{% url 'listar_setores_funcionarios' %}" class="menu-item {% if 'funcionarios' in request.resolver_match.view_name %}active{% endif %}"> {# Atualiza href e condição active #}
                     <i class="fas fa-users"></i> <span class="menu-text">Funcionários</span>
                 </a>
-                <a href="{% url 'listar_requisicoes' %}" class="menu-item {% if 'requisicoes' in request.resolver_match.url_name %}active{% endif %}">
-                     <i class="fas fa-clipboard-list"></i> <span class="menu-text">Requisições</span>
-                </a>
 
                 {% if perms.hierarquia.add_funcionario %}
                     <a href="{% url 'cadastrar_funcionario' %}" class="menu-item">
