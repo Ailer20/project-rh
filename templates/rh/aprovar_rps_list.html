@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Requisições para Aprovar{% endblock title %}
+
+{% block extra_css %}
+    <style>
+        /* Reutiliza estilos de badges e botões, mas podemos adicionar específicos se necessário */
+        .btn-approve { background-color: #28a745; color: white; padding: 5px 10px; font-size: 0.9em; text-decoration: none; border-radius: 5px; }
+        .btn-approve:hover { background-color: #218838; }
+
+        /* Badges de Status da RP */
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; }
+        .status-pendente_nivel_4, .status-pendente_nivel_3, .status-pendente_nivel_2, .status-pendente_nivel_1 { background-color: #ffc107; color: #333; } /* Amarelo para pendente */
+        /* Outros status não devem aparecer aqui, mas mantemos para consistência */
+        .status-aprovada { background-color: #28a745; color: white; }
+        .status-rejeitada { background-color: #dc3545; color: white; }
+        .status-cancelada { background-color: #6c757d; color: white; }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="aprovar-rps-container">
+    <h1>Requisições Pendentes de Aprovação</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if requisicoes %}
+        <p style="color: #a0a0b0; margin-bottom: 20px;">Você tem {{ requisicoes|length }} requisição(ões) aguardando sua análise.</p>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Vaga Solicitada</th>
+                        <th>Solicitante</th>
+                        <th>Setor Solicitante</th>
+                        <th>Data Abertura</th>
+                        <th>Status Atual</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rp in requisicoes %}
+                    <tr>
+                        <td>#{{ rp.id }}</td>
+                        <td><strong>{{ rp.vaga.titulo }}</strong></td>
+                        <td>{{ rp.solicitante.nome }}</td>
+                        <td>{{ rp.solicitante.setor_primario.nome|default:"N/A" }}</td>
+                        <td>{{ rp.criado_em|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <span class="status-badge status-{{ rp.status }}">
+                                {{ rp.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhar_rp' rp.pk %}" class="btn-approve"><i class="fas fa-search-plus"></i> Analisar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="no-results">Nenhuma requisição pendente para sua aprovação no momento.</p>
+    {% endif %}
+
+</div>
+{% endblock content %}

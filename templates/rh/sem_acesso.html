@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Acesso Negado{% endblock title %}
+
+{% block extra_css %}
+    <style>
+        .error-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            text-align: center;
+        }
+        .error-icon {
+            font-size: 4em;
+            color: #dc3545; /* Vermelho */
+            margin-bottom: 20px;
+        }
+        .error-message h2 {
+            margin-bottom: 15px;
+        }
+        .error-message p {
+            color: #737373;
+            margin-bottom: 25px;
+        }
+        body.dark-theme .error-message p {
+            color: #a0a0b0;
+        }
+        .btn-back {
+             background: #6c757d; /* Cinza */
+             color: white;
+             text-decoration: none;
+             padding: 10px 20px;
+             border-radius: 8px;
+             font-weight: 500;
+        }
+        .btn-back:hover { background: #5a6268; }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="error-container card">
+    <div class="error-icon">
+        <i class="fas fa-user-lock"></i>
+    </div>
+    <div class="error-message">
+        <h2>Acesso Negado</h2>
+        <p>{{ mensagem|default:"Não foi encontrado um perfil de funcionário associado ao seu usuário. Entre em contato com o administrador do sistema." }}</p>
+        <a href="{% url 'dashboard' %}" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Dashboard</a>
+        {# Ou link para logout: #}
+        {# <a href="{% url 'logout' %}" class="btn-back" style="margin-left: 10px;"><i class="fas fa-sign-out-alt"></i> Sair</a> #}
+    </div>
+</div>
+{% endblock content %}

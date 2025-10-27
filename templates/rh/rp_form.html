@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Abrir Requisição Pessoal" }}{% endblock title %}
+
+{% block extra_css %}
+    <style>
+        .form-card {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-card form p {
+            margin-bottom: 15px;
+        }
+        .form-card label {
+            margin-bottom: 5px;
+        }
+        .form-actions {
+            margin-top: 25px;
+            text-align: right;
+        }
+        .form-actions button {
+            margin-left: 10px;
+        }
+        .btn-cancel {
+             background: #6c757d;
+             color: white;
+             text-decoration: none;
+             padding: 12px 25px;
+             border-radius: 8px;
+             font-size: 1em;
+             font-weight: 600;
+        }
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        /* Estilo para campos opcionais */
+        .optional-fields {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #e0e0e0; /* Separador visual */
+        }
+        body.dark-theme .optional-fields {
+             border-top-color: #2a2a4a;
+        }
+        .optional-fields small {
+            color: #737373;
+            display: block;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+        body.dark-theme .optional-fields small {
+            color: #a0a0b0;
+        }
+
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="rp-form-container">
+    <h1>{{ titulo_pagina|default:"Abrir Requisição Pessoal" }}</h1>
+
+    <div class="card form-card">
+        <form method="post">
+            {% csrf_token %}
+
+            {{ form.non_field_errors }}
+
+            {# Renderiza os campos definidos na View (Vaga, Tipo, Justificativa, etc.) #}
+            {{ form.as_p }}
+
+            {# Adicionar lógica condicional para mostrar campos de substituição se Tipo for 'substituicao' #}
+            {# Isso pode ser feito com JavaScript ou ajustando a view/form #}
+
+            <div class="form-actions">
+                 {# O botão cancelar pode voltar para o dashboard ou minhas RPs #}
+                <a href="{% url 'dashboard' %}" class="btn-cancel">Cancelar</a>
+                <button type="submit">Enviar para Aprovação</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    // Script simples para mostrar/esconder campos de substituição (opcional)
+    document.addEventListener('DOMContentLoaded', function() {
+        const tipoVagaSelect = document.getElementById('id_tipo_vaga'); // Ajuste o ID se for diferente
+        const substituidoFieldGroup = document.querySelector('#id_nome_substituido')?.closest('p'); // Encontra o <p> pai
+        const motivoFieldGroup = document.querySelector('#id_motivo_substituicao')?.closest('p');
+
+        function toggleSubstituicaoFields() {
+            if (tipoVagaSelect && substituidoFieldGroup && motivoFieldGroup) {
+                if (tipoVagaSelect.value === 'substituicao') {
+                    substituidoFieldGroup.style.display = 'block';
+                    motivoFieldGroup.style.display = 'block';
+                } else {
+                    substituidoFieldGroup.style.display = 'none';
+                    motivoFieldGroup.style.display = 'none';
+                }
+            }
+        }
+
+        if (tipoVagaSelect) {
+            toggleSubstituicaoFields(); // Executa ao carregar a página
+            tipoVagaSelect.addEventListener('change', toggleSubstituicaoFields); // Executa ao mudar a seleção
+        }
+    });
+</script>
+{% endblock extra_js %}

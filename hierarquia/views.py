@@ -5,7 +5,12 @@ from django.contrib.auth.models import User
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Funcionario, Cargo, Setor, CentroServico, Requisicao
+from .models import Funcionario, Cargo, Setor, CentroServico, Requisicao, Vaga, RequisicaoPessoal
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.views.decorators.http import require_POST
 from datetime import datetime
 from django.contrib.auth.models import User, Permission 
 # Adicione esta linha inteira
@@ -476,3 +481,235 @@ def gerenciar_setores(request):
     }
     
     return render(request, 'hierarquia/gerenciar_setores.html', context)
+
+# --- MIXINS DE PERMISSÃO (REUTILIZÁVEIS) ---
+
+class BasePermissionMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Mixin base para verificar se o usuário tem um funcionário associado."""
+    login_url = reverse_lazy('login')
+
+    def handle_no_permission(self):
+        # Redireciona para login ou página de erro
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        # Se está autenticado mas não tem permissão/funcionário
+        return render(self.request, 'hierarquia/sem_acesso.html', {'mensagem': getattr(self, 'permission_denied_message', 'Acesso negado.')})
+
+    def test_func(self):
+        try:
+            self.funcionario_logado = Funcionario.objects.get(usuario=self.request.user)
+            return True
+        except Funcionario.DoesNotExist:
+            self.permission_denied_message = 'Não foi encontrado um perfil de funcionário associado ao seu usuário.'
+            return False
+
+class RHDPRequiredMixin(BasePermissionMixin):
+    """ Garante que o usuário logado pertence ao RH ou DP """
+    permission_denied_message = 'Acesso restrito ao RH/Departamento Pessoal.'
+    def test_func(self):
+        if not super().test_func(): return False # Verifica se tem funcionário
+        # Verifica se o setor primário existe e se o nome é RH ou DP
+        return self.funcionario_logado.setor_primario and self.funcionario_logado.setor_primario.nome in ['RECURSOS HUMANOS', 'DEPARTAMENTO DE PESSOAL']
+
+class Nivel5RequiredMixin(BasePermissionMixin):
+    """ Garante que o usuário logado tem nível 5 (ADM/Analista) ou superior (1 a 4)"""
+    permission_denied_message = 'Acesso restrito a Administradores/Analistas ou superiores.'
+    def test_func(self):
+        if not super().test_func(): return False
+        # Permite Nível 5 e também níveis superiores (1 a 4), pois eles também podem iniciar RPs
+        return self.funcionario_logado.cargo and self.funcionario_logado.cargo.nivel <= 5
+
+class PodeAprovarMixin(BasePermissionMixin):
+    """ Verifica se o usuário pode ver/interagir com uma RP específica """
+    permission_denied_message = 'Você não tem permissão para acessar esta requisição.'
+
+    def test_func(self):
+        if not super().test_func(): return False
+        rp = self.get_object() # Pega a RP da DetailView ou UpdateView
+        
+        # Condições para ver:
+        # 1. É o solicitante?
+        # 2. É o aprovador atual?
+        # 3. É um superior hierárquico (Nível 1, 2, 3) do solicitante? (Simplificado aqui)
+        # 4. Pertence ao RH/DP (podem ver todas?) - Adicionar essa regra se necessário
+        
+        e_solicitante = (rp.solicitante == self.funcionario_logado)
+        e_aprovador_atual = (rp.aprovador_atual == self.funcionario_logado)
+        
+        # Lógica básica de superior (pode precisar ser mais robusta)
+        e_superior = False
+        if rp.solicitante.cargo and self.funcionario_logado.cargo:
+            e_superior = self.funcionario_logado.cargo.nivel < rp.solicitante.cargo.nivel
+            # Idealmente, verificar se está na cadeia hierárquica do solicitante
+
+        return e_solicitante or e_aprovador_atual or e_superior or self.funcionario_logado.cargo.nivel == 1
+
+
+# --- ✅ NOVAS VIEWS PARA VAGAS ---
+
+class VagaListView(RHDPRequiredMixin, ListView):
+    model = Vaga
+    template_name = 'hierarquia/vaga_list.html' # Criar este template
+    context_object_name = 'vagas'
+    ordering = ['-criado_em']
+
+class VagaCreateView(RHDPRequiredMixin, CreateView):
+    model = Vaga
+    template_name = 'hierarquia/vaga_form.html' # Criar este template
+    fields = [ # Liste os campos do seu modelo Vaga
+        'titulo', 'setor', 'cargo', 'centro_custo', 'tipo_contratacao',
+        'faixa_salarial_inicial', 'faixa_salarial_final', 'requisitos_tecnicos',
+        'requisitos_comportamentais', 'principais_atividades', 'formacao_academica',
+        'beneficios', 'justificativa', 'status',
+    ]
+    success_url = reverse_lazy('listar_vagas')
+
+    def form_valid(self, form):
+        form.instance.criado_por = self.funcionario_logado # Usa o funcionário do Mixin
+        messages.success(self.request, f"Vaga '{form.instance.titulo}' criada com sucesso.")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo_pagina'] = "Criar Nova Vaga"
+        return context
+
+class VagaUpdateView(RHDPRequiredMixin, UpdateView):
+    model = Vaga
+    template_name = 'hierarquia/vaga_form.html'
+    fields = [ # Mesmos campos do CreateView
+        'titulo', 'setor', 'cargo', 'centro_custo', 'tipo_contratacao',
+        'faixa_salarial_inicial', 'faixa_salarial_final', 'requisitos_tecnicos',
+        'requisitos_comportamentais', 'principais_atividades', 'formacao_academica',
+        'beneficios', 'justificativa', 'status',
+    ]
+    success_url = reverse_lazy('listar_vagas')
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Vaga '{form.instance.titulo}' atualizada com sucesso.")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo_pagina'] = "Editar Vaga"
+        return context
+
+class VagaDetailView(RHDPRequiredMixin, DetailView):
+    model = Vaga
+    template_name = 'hierarquia/vaga_detail.html' # Criar este template (Opcional)
+    context_object_name = 'vaga'
+
+# --- ✅ NOVAS VIEWS PARA REQUISIÇÃO PESSOAL (RP) ---
+
+class RequisicaoPessoalCreateView(Nivel5RequiredMixin, CreateView):
+    model = RequisicaoPessoal
+    template_name = 'hierarquia/rp_form.html' # Criar este template
+    fields = [ # Campos que o solicitante (Nível <=5) preenche
+        'vaga', 'tipo_vaga', 'nome_substituido', 'motivo_substituicao',
+        'local_trabalho', 'data_prevista_inicio', 'prazo_contratacao',
+        'horario_trabalho', 'justificativa_rp'
+    ]
+    success_url = reverse_lazy('minhas_rps')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Passa apenas vagas ABERTAS para o formulário
+        context['form'].fields['vaga'].queryset = Vaga.objects.filter(status='aberta').order_by('titulo')
+        context['titulo_pagina'] = "Abrir Nova Requisição Pessoal"
+        return context
+
+    def form_valid(self, form):
+        form.instance.solicitante = self.funcionario_logado # Usa o funcionário do Mixin
+        # A lógica de 'set_initial_approver' está no método save() do model
+        messages.success(self.request, "Requisição Pessoal aberta e enviada para aprovação.")
+        return super().form_valid(form)
+
+class MinhasRequisicoesListView(BasePermissionMixin, ListView):
+    model = RequisicaoPessoal
+    template_name = 'hierarquia/minhas_rps_list.html' # Criar este template
+    context_object_name = 'requisicoes'
+
+    def get_queryset(self):
+        return RequisicaoPessoal.objects.filter(solicitante=self.funcionario_logado).order_by('-criado_em')
+
+class AprovarRequisicoesListView(BasePermissionMixin, ListView):
+    model = RequisicaoPessoal
+    template_name = 'hierarquia/aprovar_rps_list.html' # Criar este template
+    context_object_name = 'requisicoes'
+
+    def get_queryset(self):
+        # Mostra RPs que estão esperando aprovação do usuário logado E estão pendentes
+        return RequisicaoPessoal.objects.filter(
+            aprovador_atual=self.funcionario_logado,
+            status__startswith='pendente' # Garante que só apareçam pendentes
+        ).order_by('criado_em')
+
+class RequisicaoPessoalDetailView(PodeAprovarMixin, DetailView): # Usa o Mixin de permissão
+    model = RequisicaoPessoal
+    template_name = 'hierarquia/rp_detail.html' # Criar este template
+    context_object_name = 'rp'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        rp = self.object
+        # O Mixin já garante que temos 'self.funcionario_logado'
+        # Verifica se o usuário logado é o aprovador atual e se a RP está pendente
+        context['pode_aprovar_rejeitar'] = (rp.aprovador_atual == self.funcionario_logado and
+                                             rp.status.startswith('pendente'))
+        return context
+
+# Views baseadas em função para APROVAR e REJEITAR
+@login_required(login_url='login')
+@require_POST # Garante que só aceita POST
+def aprovar_rp_view(request, pk):
+    rp = get_object_or_404(RequisicaoPessoal, pk=pk)
+    try:
+        funcionario_logado = Funcionario.objects.get(usuario=request.user)
+    except Funcionario.DoesNotExist:
+        messages.error(request, "Funcionário não encontrado.")
+        return redirect('dashboard') # Ou outra página
+
+    # Validação rigorosa
+    if rp.aprovador_atual != funcionario_logado or not rp.status.startswith('pendente'):
+        messages.error(request, "Você não tem permissão para aprovar esta requisição ou ela não está mais pendente.")
+        return redirect('detalhar_rp', pk=rp.pk)
+
+    # Chama o método do modelo para avançar
+    rp.avancar_aprovacao(aprovador_que_aprovou=funcionario_logado)
+
+    if rp.status == 'aprovada':
+        messages.success(request, f"Requisição Pessoal #{rp.id} aprovada com sucesso!")
+        # Notificar RH/DP?
+    else:
+        messages.info(request, f"Requisição Pessoal #{rp.id} encaminhada para {rp.aprovador_atual.nome}.")
+        # Notificar próximo aprovador?
+
+    return redirect('listar_rps_para_aprovar')
+
+@login_required(login_url='login')
+@require_POST
+def rejeitar_rp_view(request, pk):
+    rp = get_object_or_404(RequisicaoPessoal, pk=pk)
+    try:
+        funcionario_logado = Funcionario.objects.get(usuario=request.user)
+    except Funcionario.DoesNotExist:
+        messages.error(request, "Funcionário não encontrado.")
+        return redirect('dashboard')
+
+    # Validação
+    if rp.aprovador_atual != funcionario_logado or not rp.status.startswith('pendente'):
+        messages.error(request, "Você não tem permissão para rejeitar esta requisição ou ela não está mais pendente.")
+        return redirect('detalhar_rp', pk=rp.pk)
+
+    observacao = request.POST.get('observacao', '') # Pega a observação do formulário no rp_detail.html
+    if not observacao:
+        messages.error(request, "A observação é obrigatória para rejeitar a requisição.")
+        # Idealmente, retornar para rp_detail com o erro no formulário
+        return redirect('detalhar_rp', pk=rp.pk) 
+
+    # Chama o método do modelo para rejeitar
+    rp.rejeitar(aprovador_que_rejeitou=funcionario_logado, observacao=observacao)
+    messages.warning(request, f"Requisição Pessoal #{rp.id} rejeitada.")
+    # Notificar solicitante?
+
+    return redirect('listar_rps_para_aprovar')

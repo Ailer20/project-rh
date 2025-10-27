@@ -3,7 +3,7 @@ from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget, DateWidget, BooleanWidget
-from .models import Cargo, Setor, CentroServico, Funcionario, Requisicao
+from .models import Cargo, Setor, CentroServico, Funcionario, Requisicao, Vaga, RequisicaoPessoal
 from django.contrib.auth.models import User
 
 # --- Resources para Cargo e Setor (sem mudanças) ---
@@ -81,3 +81,6 @@ class RequisicaoAdmin(admin.ModelAdmin):
         return "-"
     get_solicitante_setor.short_description = 'Setor Solicitante'
     get_solicitante_setor.admin_order_field = 'solicitante__setor_primario'
+
+admin.site.register(Vaga)
+admin.site.register(RequisicaoPessoal)

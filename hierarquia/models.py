@@ -254,3 +254,217 @@ class Requisicao(models.Model):
     
     def __str__(self):
         return f"{self.titulo} - {self.status}"
+    
+# Modelo Vaga ATUALIZADO com campos do PDF
+class Vaga(models.Model):
+    STATUS_CHOICES = [
+        ('aberta', 'Aberta'),
+        ('em_processo', 'Em Processo de Seleção'),
+        ('congelada', 'Congelada'),
+        ('fechada', 'Fechada'),
+    ]
+    TIPO_CONTRATACAO_CHOICES = [
+        ('clt', 'CLT'),
+        ('pj', 'PJ'),
+        ('estagio', 'Estágio'),
+        ('temporario', 'Temporário'),
+        ('terceiro', 'Terceiro'),
+    ]
+
+    titulo = models.CharField(max_length=200, verbose_name="Título da Vaga/Cargo")
+    setor = models.ForeignKey(Setor, on_delete=models.PROTECT, related_name='vagas', verbose_name="Setor da Vaga")
+    cargo = models.ForeignKey(Cargo, on_delete=models.PROTECT, related_name='vagas', verbose_name="Cargo da Vaga")
+    centro_custo = models.CharField(max_length=100, blank=True, verbose_name="Centro de Custo") # Adicionado
+    tipo_contratacao = models.CharField(max_length=20, choices=TIPO_CONTRATACAO_CHOICES, default='clt', verbose_name="Tipo de Contratação")
+    faixa_salarial_inicial = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Faixa Salarial (Início)")
+    faixa_salarial_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Faixa Salarial (Fim)")
+    requisitos_tecnicos = models.TextField(blank=True, verbose_name="Competências Técnicas")
+    requisitos_comportamentais = models.TextField(blank=True, verbose_name="Competências Comportamentais")
+    principais_atividades = models.TextField(blank=True, verbose_name="Principais Responsabilidades/Atividades")
+    formacao_academica = models.TextField(blank=True, verbose_name="Formação Acadêmica") # Adicionado
+    beneficios = models.TextField(blank=True, verbose_name="Benefícios") # Adicionado
+    justificativa = models.TextField(verbose_name="Justificativa da Vaga (RH/DP)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='aberta', verbose_name="Status da Vaga")
+    criado_por = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, related_name='vagas_criadas', verbose_name="Criado Por (RH/DP)")
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+    # Adicione outros campos específicos do seu checklist se houver (Ex: Nível Idioma, etc.)
+
+    def __str__(self):
+        return f"{self.titulo} ({self.setor.nome})"
+
+    class Meta:
+        verbose_name = "Vaga"
+        verbose_name_plural = "Vagas"
+
+
+# Modelo RequisicaoPessoal ATUALIZADO com campos do PDF
+class RequisicaoPessoal(models.Model):
+    STATUS_RP_CHOICES = [
+        ('pendente_nivel_4', 'Pendente Supervisor'), # Nível 4 aprova
+        ('pendente_nivel_3', 'Pendente Coordenador'), # Nível 3 aprova
+        ('pendente_nivel_2', 'Pendente Gerente'),     # Nível 2 aprova
+        ('pendente_nivel_1', 'Pendente Diretor'),    # Nível 1 aprova
+        ('aprovada', 'Aprovada (RH)'),             # Aprovado por todos
+        ('rejeitada', 'Rejeitada'),
+        ('cancelada', 'Cancelada'),
+    ]
+    TIPO_VAGA_CHOICES = [
+        ('nova', 'Nova Posição'),
+        ('substituicao', 'Substituição'),
+    ]
+    MOTIVO_SUBSTITUICAO_CHOICES = [
+        ('demissao', 'Demissão'),
+        ('promocao', 'Promoção'),
+        ('transferencia', 'Transferência'),
+        ('aposentadoria', 'Aposentadoria'),
+        ('termino_contrato', 'Término de Contrato'),
+        ('outro', 'Outro'),
+    ]
+
+    # --- Campos de Identificação ---
+    # numero_rp = models.CharField(max_length=20, unique=True, blank=True) # Opcional: Gerar um número único
+    vaga = models.ForeignKey(Vaga, on_delete=models.CASCADE, related_name='requisicoes', verbose_name="Vaga Solicitada")
+    solicitante = models.ForeignKey(Funcionario, on_delete=models.PROTECT, related_name='rps_solicitadas', verbose_name="Solicitante")
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Data de Abertura")
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    # --- Detalhes da Vaga (Informações da RP) ---
+    tipo_vaga = models.CharField(max_length=20, choices=TIPO_VAGA_CHOICES, default='nova', verbose_name="Tipo de Vaga")
+    nome_substituido = models.CharField(max_length=200, blank=True, null=True, verbose_name="Nome do Substituído", help_text="Preencher se for Substituição.")
+    motivo_substituicao = models.CharField(max_length=30, choices=MOTIVO_SUBSTITUICAO_CHOICES, blank=True, null=True, verbose_name="Motivo da Substituição")
+    local_trabalho = models.CharField(max_length=200, blank=True, verbose_name="Local de Trabalho")
+    data_prevista_inicio = models.DateField(null=True, blank=True, verbose_name="Data Prevista para Início")
+    prazo_contratacao = models.DateField(null=True, blank=True, verbose_name="Prazo Limite para Contratação")
+    horario_trabalho = models.CharField(max_length=100, blank=True, verbose_name="Horário de Trabalho")
+    justificativa_rp = models.TextField(verbose_name="Justificativa da Contratação", help_text="Descreva a necessidade desta contratação.")
+
+    # --- Controle de Aprovação ---
+    status = models.CharField(max_length=30, choices=STATUS_RP_CHOICES, verbose_name="Status da Requisição") # Default será definido no save()
+    aprovador_atual = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='rps_para_aprovar', verbose_name="Próximo Aprovador")
+    observacoes_aprovador = models.TextField(blank=True, verbose_name="Observações do Aprovador")
+
+    # --- Histórico de Aprovação (Opcional, mas recomendado) ---
+    aprovado_por_supervisor = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_supervisor = models.DateTimeField(null=True, blank=True)
+    aprovado_por_coordenador = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_coordenador = models.DateTimeField(null=True, blank=True)
+    aprovado_por_gerente = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_gerente = models.DateTimeField(null=True, blank=True)
+    aprovado_por_diretor = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_diretor = models.DateTimeField(null=True, blank=True)
+    # Quem rejeitou (se aplicável)
+    rejeitado_por = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_rejeicao = models.DateTimeField(null=True, blank=True)
+
+
+    def __str__(self):
+        # numero = f"RP {self.numero_rp}: " if hasattr(self, 'numero_rp') and self.numero_rp else ""
+        numero = f"RP #{self.id}: " # Usando o ID por enquanto
+        return f"{numero}{self.vaga.titulo} por {self.solicitante.nome}"
+
+    def _encontrar_proximo_aprovador(self, nivel_atual_aprovador=None):
+        """
+        Lógica interna para encontrar o próximo superior na hierarquia.
+        Assume que existe o campo 'superior_imediato' no modelo Funcionario.
+        Precisa ser adaptada à sua estrutura hierárquica real.
+        """
+        ultimo_aprovador = nivel_atual_aprovador or self.solicitante
+        if not ultimo_aprovador or not hasattr(ultimo_aprovador, 'superior_imediato'):
+            return None # Não há como subir na hierarquia
+
+        superior = ultimo_aprovador.superior_imediato
+        while superior and superior.cargo and superior.cargo.nivel >= ultimo_aprovador.cargo.nivel:
+            # Continua subindo se o superior tem nível igual ou maior (procura alguém com nível menor)
+            if not hasattr(superior, 'superior_imediato'): return None # Chegou ao topo sem achar
+            superior = superior.superior_imediato
+            if superior == ultimo_aprovador: break # Evita loop infinito
+
+        return superior # Retorna o primeiro superior com nível MENOR encontrado
+
+    def set_initial_approver(self):
+        """Define o status e o aprovador inicial ao criar a RP."""
+        # Encontra o primeiro superior com nível 4 (Supervisor) ou menor
+        aprovador = self.solicitante
+        while aprovador and aprovador.cargo and aprovador.cargo.nivel > 4:
+             if not hasattr(aprovador, 'superior_imediato'):
+                 aprovador = None; break
+             aprovador = aprovador.superior_imediato
+             if aprovador == self.solicitante: break # Evita loop
+
+        if aprovador and aprovador.cargo and aprovador.cargo.nivel <= 4:
+            self.aprovador_atual = aprovador
+            # Define o status inicial baseado no nível do primeiro aprovador
+            if aprovador.cargo.nivel == 4: self.status = 'pendente_nivel_4'
+            elif aprovador.cargo.nivel == 3: self.status = 'pendente_nivel_3'
+            elif aprovador.cargo.nivel == 2: self.status = 'pendente_nivel_2'
+            elif aprovador.cargo.nivel == 1: self.status = 'pendente_nivel_1'
+            else: self.status = 'pendente_nivel_1' # Segurança: cai para o diretor
+        else:
+            # Se não encontrar ninguém na cadeia até Nível 4, vai direto pro Diretor (Nível 1)
+            try:
+                diretor = Funcionario.objects.filter(cargo__nivel=1).first() # Assume que há um diretor
+                self.aprovador_atual = diretor
+                self.status = 'pendente_nivel_1'
+            except Funcionario.DoesNotExist:
+                 self.status = 'aprovada' # Ou um status de erro? Se não há diretor...
+                 self.aprovador_atual = None
+
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding # Verifica se é uma nova instância
+        if is_new:
+            # Define o status e aprovador inicial SOMENTE na criação
+            self.set_initial_approver()
+        super().save(*args, **kwargs) # Salva o objeto
+
+    def avancar_aprovacao(self, aprovador_que_aprovou):
+        """Move a RP para o próximo nível de aprovação."""
+        now = timezone.now()
+        nivel_aprovador = aprovador_que_aprovou.cargo.nivel
+
+        # Registra quem aprovou e quando
+        if nivel_aprovador == 4:
+            self.aprovado_por_supervisor = aprovador_que_aprovou
+            self.data_aprovacao_supervisor = now
+        elif nivel_aprovador == 3:
+            self.aprovado_por_coordenador = aprovador_que_aprovou
+            self.data_aprovacao_coordenador = now
+        elif nivel_aprovador == 2:
+             self.aprovado_por_gerente = aprovador_que_aprovou
+             self.data_aprovacao_gerente = now
+        elif nivel_aprovador == 1:
+             self.aprovado_por_diretor = aprovador_que_aprovou
+             self.data_aprovacao_diretor = now
+
+        # Encontra o próximo aprovador (alguém com nível MENOR que o atual)
+        proximo_aprovador = self._encontrar_proximo_aprovador(nivel_atual_aprovador=aprovador_que_aprovou)
+
+        if proximo_aprovador and proximo_aprovador.cargo:
+            self.aprovador_atual = proximo_aprovador
+            # Define o novo status pendente
+            prox_nivel = proximo_aprovador.cargo.nivel
+            if prox_nivel == 3: self.status = 'pendente_nivel_3'
+            elif prox_nivel == 2: self.status = 'pendente_nivel_2'
+            elif prox_nivel == 1: self.status = 'pendente_nivel_1'
+            else: self.status = 'pendente_nivel_1' # Segurança
+        else:
+            # Não há mais ninguém para aprovar -> APROVADA (final do fluxo)
+            self.status = 'aprovada'
+            self.aprovador_atual = None
+
+        self.save()
+
+    def rejeitar(self, aprovador_que_rejeitou, observacao):
+        """Marca a RP como rejeitada."""
+        self.status = 'rejeitada'
+        self.rejeitado_por = aprovador_que_rejeitou
+        self.data_rejeicao = timezone.now()
+        self.observacoes_aprovador = observacao
+        self.aprovador_atual = None
+        self.save()
+
+    class Meta:
+        verbose_name = "Requisição Pessoal"
+        verbose_name_plural = "Requisições Pessoais"
+        ordering = ['-criado_em']

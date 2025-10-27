@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Formulário de Vaga" }}{% endblock title %}
+
+{% block extra_css %}
+    {# Se precisar de CSS específico para este formulário #}
+    <style>
+        .form-card {
+            max-width: 800px; /* Limita a largura do formulário */
+            margin: 0 auto; /* Centraliza */
+        }
+        .form-card form p {
+            margin-bottom: 15px; /* Espaçamento entre os campos gerados pelo as_p */
+        }
+        .form-card label {
+            margin-bottom: 5px; /* Espaçamento abaixo do label */
+        }
+        .form-actions {
+            margin-top: 25px;
+            text-align: right; /* Alinha o botão à direita */
+        }
+        .form-actions button {
+            margin-left: 10px; /* Espaço entre botões (se houver mais de um) */
+        }
+        .btn-cancel {
+             background: #6c757d; /* Cinza para cancelar */
+             color: white;
+             text-decoration: none;
+             padding: 12px 25px;
+             border-radius: 8px;
+             font-size: 1em;
+             font-weight: 600;
+        }
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        /* Ajustes para textarea */
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="vaga-form-container">
+    <h1>{{ titulo_pagina|default:"Formulário de Vaga" }}</h1>
+
+    <div class="card form-card">
+        <form method="post" enctype="multipart/form-data"> {# enctype é importante se você adicionar upload de arquivos #}
+            {% csrf_token %}
+
+            {{ form.non_field_errors }} {# Exibe erros gerais do formulário #}
+
+            {# Renderiza os campos do formulário automaticamente #}
+            {# Cada campo será envolvido em <p>, incluindo label e input #}
+            {{ form.as_p }}
+
+            <div class="form-actions">
+                <a href="{% url 'listar_vagas' %}" class="btn-cancel">Cancelar</a>
+                <button type="submit">Salvar Vaga</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
