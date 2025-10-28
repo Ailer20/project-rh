@@ -368,24 +368,37 @@ class RequisicaoPessoal(models.Model):
 
     # --- 4. NOVA FUNÇÃO AUXILIAR ---
     def get_rh_approver(self):
-        """ Encontra o aprovador do RH (Gestor ou Coordenador do setor de RH) """
+        """ 
+        Encontra o aprovador do RH.
+        Busca qualquer funcionário ativo nos setores 'RECURSOS HUMANOS' ou 'DEPARTAMENTO PESSOAL'.
+        Dá preferência para Níveis mais altos (Gestor/Coordenador/Supervisor).
+        """
+        # Nomes exatos dos setores, case-insensitive
+        rh_sector_names = ["RECURSOS HUMANOS", "DEPARTAMENTO DE PESSOAL"]
+        
+        # Cria uma consulta Q para buscar em qualquer um dos nomes, ignorando maiúsculas
+        q_objects = Q()
+        for name in rh_sector_names:
+            q_objects |= Q(setor_primario__nome__iexact=name) # __iexact = case-insensitive
+
         try:
-            # Tenta encontrar Gestor (Nível 2) ou Coordenador (Nível 3) do setor de RH
-            # AJUSTE 'RECURSOS HUMANOS' para o nome exato do seu setor de RH no banco
+            # Tenta encontrar QUALQUER funcionário ativo nesses setores
             rh_approver = Funcionario.objects.filter(
-                setor_primario__nome__iexact="RECURSOS HUMANOS",
-                cargo__nivel__in=[2, 3], # Nível 2 (Gestor) ou 3 (Coordenador)
+                q_objects,  # Filtra pelos setores de RH/DP
                 ativo=True
-            ).order_by('cargo__nivel').first() # Pega o de nível mais alto (Gestor) primeiro
-            
+            ).order_by('cargo__nivel').first() # Pega o de nível mais alto (Ex: Nível 3) primeiro
+
             if rh_approver:
-                return rh_approver
+                # --- SUCESSO! ---
+                # Com base nas suas imagens, isso vai encontrar o 
+                # "DIEGO WALLACE ARAUJO DA COSTA" (Nível 3) do DP.
+                return rh_approver 
             
-            # Fallback: Se não achar, pega o Diretor (Nível 1)
-            return Funcionario.objects.get(cargo__nivel=1, ativo=True)
+            # Fallback: Se não achar NINGUÉM no RH/DP, aí sim pega o Diretor (Nível 1)
+            return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
 
         except Exception:
-            # Fallback final: Pega o Diretor (Nível 1)
+            # Fallback final: Pega o Diretor (Nível 1) em caso de erro
             return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
 
     # --- 5. LÓGICA DE APROVADOR INICIAL (CORRIGIDA) ---
