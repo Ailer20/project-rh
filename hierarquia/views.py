@@ -634,28 +634,50 @@ class MinhasRequisicoesListView(BasePermissionMixin, ListView):
 
 class AprovarRequisicoesListView(BasePermissionMixin, ListView):
     model = RequisicaoPessoal
-    template_name = 'rh/aprovar_rps_list.html' # Criar este template
+    template_name = 'rh/aprovar_rps_list.html'
     context_object_name = 'requisicoes'
 
     def get_queryset(self):
-        # Mostra RPs que estão esperando aprovação do usuário logado E estão pendentes
+        # --- ✅ CORREÇÃO APLICADA AQUI ---
+        
+        # Lista de TODOS os status que significam "aguardando ação do aprovador"
+        actionable_statuses = [
+            'pendente_gestor',    # Aguardando Gestor (1ª vez)
+            'pendente_rh',        # Aguardando RH
+            'em_revisao_gestor'   # Aguardando Gestor (após edição do RH)
+        ]
+
+        # Mostra RPs que estão esperando aprovação do usuário logado E 
+        # que tenham um dos status da lista acima.
         return RequisicaoPessoal.objects.filter(
             aprovador_atual=self.funcionario_logado,
-            status__startswith='pendente' # Garante que só apareçam pendentes
+            status__in=actionable_statuses  # Trocamos 'startswith' por '__in'
         ).order_by('criado_em')
 
 class RequisicaoPessoalDetailView(PodeAprovarMixin, DetailView): # Usa o Mixin de permissão
     model = RequisicaoPessoal
-    template_name = 'rh/rp_detail.html' # Criar este template
+    template_name = 'rh/rp_detail.html'
     context_object_name = 'rp'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         rp = self.object
         # O Mixin já garante que temos 'self.funcionario_logado'
-        # Verifica se o usuário logado é o aprovador atual e se a RP está pendente
-        context['pode_aprovar_rejeitar'] = (rp.aprovador_atual == self.funcionario_logado and
-                                             rp.status.startswith('pendente'))
+
+        # --- ✅ CORREÇÃO APLICADA AQUI ---
+        
+        # Lista de TODOS os status que significam "aguardando ação"
+        actionable_statuses = [
+            'pendente_gestor',
+            'pendente_rh',
+            'em_revisao_gestor'
+        ]
+
+        # Verifica se o usuário logado é o aprovador atual E se a RP está em um status de ação.
+        context['pode_aprovar_rejeitar'] = (
+            rp.aprovador_atual == self.funcionario_logado and
+            rp.status in actionable_statuses  # Usamos 'in' em vez de 'startswith'
+        )
         return context
 
 # Views baseadas em função para APROVAR e REJEITAR
@@ -669,8 +691,11 @@ def aprovar_rp_view(request, pk):
         messages.error(request, "Funcionário não encontrado.")
         return redirect('dashboard') # Ou outra página
 
+    # --- ✅ CORREÇÃO APLICADA AQUI ---
+    actionable_statuses = ['pendente_gestor', 'pendente_rh', 'em_revisao_gestor']
+    
     # Validação rigorosa
-    if rp.aprovador_atual != funcionario_logado or not rp.status.startswith('pendente'):
+    if rp.aprovador_atual != funcionario_logado or rp.status not in actionable_statuses:
         messages.error(request, "Você não tem permissão para aprovar esta requisição ou ela não está mais pendente.")
         return redirect('detalhar_rp', pk=rp.pk)
 
@@ -684,7 +709,9 @@ def aprovar_rp_view(request, pk):
         messages.info(request, f"Requisição Pessoal #{rp.id} encaminhada para {rp.aprovador_atual.nome}.")
         # Notificar próximo aprovador?
 
-    return redirect('rh/listar_rps_para_aprovar')
+    # --- ✅ CORREÇÃO DE REDIRECT (BÔNUS) ---
+    # Removido a URL "hardcoded" 'rh/listar_rps_para_aprovar'
+    return redirect('listar_rps_para_aprovar')
 
 @login_required(login_url='login')
 @require_POST
@@ -696,8 +723,11 @@ def rejeitar_rp_view(request, pk):
         messages.error(request, "Funcionário não encontrado.")
         return redirect('dashboard')
 
+    # --- ✅ CORREÇÃO APLICADA AQUI ---
+    actionable_statuses = ['pendente_gestor', 'pendente_rh', 'em_revisao_gestor']
+
     # Validação
-    if rp.aprovador_atual != funcionario_logado or not rp.status.startswith('pendente'):
+    if rp.aprovador_atual != funcionario_logado or rp.status not in actionable_statuses:
         messages.error(request, "Você não tem permissão para rejeitar esta requisição ou ela não está mais pendente.")
         return redirect('detalhar_rp', pk=rp.pk)
 
@@ -708,11 +738,16 @@ def rejeitar_rp_view(request, pk):
         return redirect('detalhar_rp', pk=rp.pk) 
 
     # Chama o método do modelo para rejeitar
+    # --- ✅ CORREÇÃO DE CAMPO DE OBSERVAÇÃO ---
+    # Atualizado para 'observacao_rejeicao' (o novo campo no models.py)
     rp.rejeitar(aprovador_que_rejeitou=funcionario_logado, observacao=observacao)
     messages.warning(request, f"Requisição Pessoal #{rp.id} rejeitada.")
     # Notificar solicitante?
 
-    return redirect('rh/listar_rps_para_aprovar')
+    # --- ✅ CORREÇÃO DE REDIRECT (BÔNUS) ---
+    return redirect('listar_rps_para_aprovar')
+
+
 class RequisicaoPessoalRHUpdateView(RHDPRequiredMixin, UpdateView):
     """
     View exclusiva para o RH editar uma RP e APROVAR ou DEVOLVER ao Gestor.
