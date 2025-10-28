@@ -5,146 +5,216 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Hierarquia{% endblock title %}</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-
-
+    
+    {# Assume que base.css contém os estilos gerais e do tema #}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    {# Bloco para CSS específico da página atual #}
     {% block extra_css %}{% endblock extra_css %}
 </head>
-<body>
+<body {% if request.COOKIES.theme == 'dark' %}class="dark-theme"{% endif %}> {# Aplica tema baseado em cookie #}
+
     <nav class="navbar">
         <h1>Sistema de RH</h1>
         <div class="navbar-user">
-            {% if user.is_authenticated and user.funcionario %}
-                <span>{{ user.funcionario.nome }} ({{ user.funcionario.cargo.nome }})</span>
+            {% if user.is_authenticated %}
+                {# Tenta buscar o funcionário associado. Requer contexto 'funcionario_logado' da view ou um custom context processor #}
+                {% with funcionario_logado=request.user.funcionario %}
+                    <span>
+                        {{ funcionario_logado.nome|default:user.username }} 
+                        {% if funcionario_logado.cargo %} ({{ funcionario_logado.cargo.nome }}) {% endif %}
+                    </span>
+                {% endwith %}
             {% else %}
                 <span>Visitante</span>
             {% endif %}
+            
             <button id="theme-toggle" class="theme-toggle-btn" aria-label="Alternar tema">
-                <i class="fas fa-moon"></i>
+                {# O ícone será definido pelo JS baseado no tema atual #}
+                <i class="fas fa-moon"></i> 
             </button>
-            <a href="{% url 'logout' %}">Sair</a>
+            
+            {% if user.is_authenticated %}
+                <a href="{% url 'logout' %}" title="Sair"><i class="fas fa-sign-out-alt"></i></a>
+            {% else %}
+                <a href="{% url 'login' %}" title="Entrar"><i class="fas fa-sign-in-alt"></i></a>
+            {% endif %}
         </div>
     </nav>
+
     <div class="page-container">
-        <aside class="sidebar" id="sidebar"> {# Added ID #}
-            <div class="sidebar-header"> {# Wrapper for header and pin button #}
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
                 <h3>Menu Principal</h3>
                 <button id="pin-sidebar-btn" class="pin-btn" aria-label="Fixar menu lateral">
-                    <i class="fas fa-thumbtack"></i> {# Initial icon (thumbtack) #}
+                    <i class="fas fa-thumbtack"></i> 
                 </button>
             </div>
-            <div class="menu-items">
-                {# Wrap text in span #}
-                <a href="{% url 'dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <i class="fas fa-home"></i> <span class="menu-text">Dashboard</span>
-                </a>
-                <a href="{% url 'listar_setores_funcionarios' %}" class="menu-item {% if 'funcionarios' in request.resolver_match.view_name %}active{% endif %}"> {# Atualiza href e condição active #}
-                    <i class="fas fa-users"></i> <span class="menu-text">Funcionários</span>
-                </a>
-
-                {% if perms.hierarquia.add_funcionario %}
-                    <a href="{% url 'cadastrar_funcionario' %}" class="menu-item">
-                         <i class="fas fa-user-plus"></i> <span class="menu-text">Cadastrar Funcionário</span>
+            
+            <nav class="menu-items"> 
+                {# Tenta buscar o funcionário. Requer 'funcionario_logado' no contexto de TODAS as views #}
+                {% with funcionario_logado=request.user.funcionario %}
+                    
+                    {# Link Visível para Todos Logados #}
+                    <a href="{% url 'dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <i class="fas fa-home fa-fw"></i> <span class="menu-text">Dashboard</span>
                     </a>
-                {% endif %}
+                    
+                    {# Link Visível para Todos Logados (ajuste a permissão se necessário) #}
+                    <a href="{% url 'listar_setores_funcionarios' %}" class="menu-item {% if 'funcionarios' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-users fa-fw"></i> <span class="menu-text">Funcionários</span>
+                    </a>
 
-                {% if user.is_authenticated and user.funcionario and user.funcionario.cargo.nivel == 1 %}
-                <a href="{% url 'gerenciar_cargos' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_cargos' %}active{% endif %}">
-                     <i class="fas fa-briefcase"></i> <span class="menu-text">Gerenciar Cargos</span>
-                </a>
-                <a href="{% url 'gerenciar_setores' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_setores' %}active{% endif %}">
-                    <i class="fas fa-building"></i> <span class="menu-text">Gerenciar Setores</span>
-                </a>
-                {% endif %}
+                    {# --- VAGAS (Visível apenas para RH/DP) --- #}
+                    {% if funcionario_logado.setor_primario.nome == 'RECURSOS HUMANOS' or funcionario_logado.setor_primario.nome == 'DEPARTAMENTO DE PESSOAL' or user.is_superuser %}
+                        <a href="{% url 'listar_vagas' %}" class="menu-item {% if 'vaga' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-briefcase fa-fw"></i> <span class="menu-text">Gerenciar Vagas</span>
+                        </a>
+                    {% endif %}
+
+                    {# --- REQUISIÇÃO PESSOAL --- #}
+                    {# Abrir RP: Nível 5 ou superior #}
+                    {% if funcionario_logado.cargo.nivel <= 5 or user.is_superuser %}
+                         <a href="{% url 'criar_rp' %}" class="menu-item {% if request.resolver_match.url_name == 'criar_rp' %}active{% endif %}">
+                            <i class="fas fa-user-plus fa-fw"></i> <span class="menu-text">Abrir RP</span>
+                        </a>
+                    {% endif %}
+                    {# Minhas RPs: Todos podem ver #}
+                    <a href="{% url 'minhas_rps' %}" class="menu-item {% if request.resolver_match.url_name == 'minhas_rps' %}active{% endif %}">
+                        <i class="fas fa-file-alt fa-fw"></i> <span class="menu-text">Minhas RPs</span>
+                    </a>
+                    {# Aprovar RPs: Nível 4 ou superior #}
+                     {% if funcionario_logado.cargo.nivel <= 4 or user.is_superuser %}
+                         <a href="{% url 'listar_rps_para_aprovar' %}" class="menu-item {% if request.resolver_match.url_name == 'listar_rps_para_aprovar' %}active{% endif %}">
+                            <i class="fas fa-check-double fa-fw"></i> <span class="menu-text">Aprovar RPs</span>
+                        </a>
+                    {% endif %}
+                    
+                    {# --- ADMINISTRAÇÃO (Apenas Nível 1 - Diretor) --- #}
+                    {% if funcionario_logado.cargo.nivel == 1 or user.is_superuser %}
+                        <a href="{% url 'gerenciar_cargos' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_cargos' %}active{% endif %}">
+                            <i class="fas fa-id-badge fa-fw"></i> <span class="menu-text">Gerenciar Cargos</span>
+                        </a>
+                        <a href="{% url 'gerenciar_setores' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_setores' %}active{% endif %}">
+                            <i class="fas fa-sitemap fa-fw"></i> <span class="menu-text">Gerenciar Setores</span>
+                        </a>
+                    {% endif %}
+                    
+                {% endwith %}
+            </nav>
+
+            {# Links do Footer continuam fora da navegação principal #}
+            <div class="sidebar-footer">
+                 {# Adicione links aqui se necessário, como Configurações #}
             </div>
+
         </aside>
 
-        <main class="main-content" id="main-content"> {# Added ID #}
+        <main class="main-content" id="main-content">
+             {% if messages %}
+                <div class="messages" style="padding: 15px; margin-bottom: 20px;">
+                    {% for message in messages %}
+                        {# Estilo básico para mensagens - pode ser melhorado no CSS #}
+                        <div class="alert alert-{{ message.tags }}" style="padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid; {% if message.tags == 'success' %}background-color: #d4edda; border-color: #c3e6cb; color: #155724;{% elif message.tags == 'error' %}background-color: #f8d7da; border-color: #f5c6cb; color: #721c24;{% else %}background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460;{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% block content %}
             {% endblock content %}
         </main>
     </div>
 
+    {# Bloco para Modais continua aqui #}
+    {% block modals %}{% endblock modals %} 
+    {# Bloco para JS específico da página #}
     {% block extra_js %}{% endblock extra_js %}
 
     <script>
-        // --- Theme Toggle Logic ---
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
-        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-
-        function setTheme(theme) {
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.body.classList.remove('dark-theme');
-                themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-                localStorage.setItem('theme', 'light');
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Theme Toggle Logic ---
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const body = document.body;
+            
+            function setTheme(theme) {
+                if (theme === 'dark') {
+                    body.classList.add('dark-theme');
+                    if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+                    document.cookie = "theme=dark;path=/;max-age=31536000"; // Salva em cookie
+                } else {
+                    body.classList.remove('dark-theme');
+                     if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+                    document.cookie = "theme=light;path=/;max-age=31536000"; // Salva em cookie
+                }
             }
-        }
-
-        if (currentTheme) {
-            setTheme(currentTheme);
-        } else if (prefersDarkScheme.matches) {
-             setTheme('dark');
-        } else {
-             setTheme('light');
-        }
-
-        themeToggleBtn.addEventListener('click', () => {
-            let newTheme = document.body.classList.contains('dark-theme') ? 'light' : 'dark';
-            setTheme(newTheme);
-        });
-
-        // --- Sidebar Collapse/Pin Logic ---
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
-        let isPinned = localStorage.getItem('sidebarPinned') === 'true'; // Check local storage
-
-        // Function to apply styles based on state
-        function applySidebarState() {
-            if (isPinned) {
-                sidebar.classList.add('sidebar-pinned');
-                sidebar.classList.remove('sidebar-collapsed'); // Ensure it's expanded when pinned
-                pinSidebarBtn.innerHTML = '<i class="fas fa-lock"></i>'; // Locked icon
-                pinSidebarBtn.setAttribute('aria-label', 'Desafixar menu lateral');
-            } else {
-                sidebar.classList.remove('sidebar-pinned');
-                // Start collapsed if not pinned (apply class initially)
-                sidebar.classList.add('sidebar-collapsed');
-                pinSidebarBtn.innerHTML = '<i class="fas fa-thumbtack"></i>'; // Thumbtack icon
-                pinSidebarBtn.setAttribute('aria-label', 'Fixar menu lateral');
-
+            
+            // Lê o tema do cookie
+            const currentTheme = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
+            const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+            
+            let initialTheme = 'light'; // Padrão claro
+            if (currentTheme) {
+                initialTheme = currentTheme;
+            } else if (prefersDarkScheme.matches) {
+                 initialTheme = 'dark';
             }
-        }
+            setTheme(initialTheme);
 
-        // Apply initial state on load
-        applySidebarState();
 
-        // Pin button click listener
-        pinSidebarBtn.addEventListener('click', () => {
-            isPinned = !isPinned; // Toggle the pinned state
-            localStorage.setItem('sidebarPinned', isPinned); // Save state
-            applySidebarState(); // Apply the new styles
-        });
-
-        // Hover listeners (only effective if NOT pinned)
-        sidebar.addEventListener('mouseenter', () => {
-            if (!isPinned) {
-                sidebar.classList.remove('sidebar-collapsed');
+            if(themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    let newTheme = body.classList.contains('dark-theme') ? 'light' : 'dark';
+                    setTheme(newTheme);
+                });
             }
-        });
 
-        sidebar.addEventListener('mouseleave', () => {
-            if (!isPinned) {
-                sidebar.classList.add('sidebar-collapsed');
+            // --- Sidebar Collapse/Pin Logic ---
+            const sidebar = document.getElementById('sidebar');
+            const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
+            let isPinned = localStorage.getItem('sidebarPinned') === 'true';
+
+            function applySidebarState() {
+                if (!sidebar || !pinSidebarBtn) return; 
+
+                if (isPinned) {
+                    sidebar.classList.add('sidebar-pinned');
+                    sidebar.classList.remove('sidebar-collapsed');
+                    pinSidebarBtn.innerHTML = '<i class="fas fa-lock"></i>';
+                    pinSidebarBtn.setAttribute('aria-label', 'Desafixar menu lateral');
+                } else {
+                    sidebar.classList.remove('sidebar-pinned');
+                    sidebar.classList.add('sidebar-collapsed'); 
+                    pinSidebarBtn.innerHTML = '<i class="fas fa-thumbtack"></i>';
+                    pinSidebarBtn.setAttribute('aria-label', 'Fixar menu lateral');
+                }
             }
-        });
 
+            applySidebarState(); 
+
+            if (pinSidebarBtn) {
+                pinSidebarBtn.addEventListener('click', () => {
+                    isPinned = !isPinned;
+                    localStorage.setItem('sidebarPinned', isPinned);
+                    applySidebarState();
+                });
+            }
+
+           if (sidebar) {
+                sidebar.addEventListener('mouseenter', () => {
+                    if (!isPinned) {
+                        sidebar.classList.remove('sidebar-collapsed');
+                    }
+                });
+
+                sidebar.addEventListener('mouseleave', () => {
+                    if (!isPinned) {
+                        sidebar.classList.add('sidebar-collapsed');
+                    }
+                });
+           }
+        });
     </script>
 </body>
 </html>

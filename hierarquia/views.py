@@ -340,7 +340,7 @@ def criar_requisicao(request):
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
-        return render(request, 'hierarquia/sem_acesso.html')
+        return render(request, 'rh/sem_acesso.html')
     
     if request.method == 'POST':
         titulo = request.POST.get('titulo')
@@ -358,7 +358,7 @@ def criar_requisicao(request):
         'funcionario_logado': funcionario_logado,
     }
     
-    return render(request, 'hierarquia/criar_requisicao.html', context)
+    return render(request, 'rh/criar_requisicao.html', context)
 
 
 @login_required(login_url='login')
@@ -367,7 +367,7 @@ def detalhar_requisicao(request, requisicao_id):
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
-        return render(request, 'hierarquia/sem_acesso.html')
+        return render(request, 'rh/sem_acesso.html')
     
     requisicao = get_object_or_404(Requisicao, id=requisicao_id)
     
@@ -381,7 +381,7 @@ def detalhar_requisicao(request, requisicao_id):
     )
     
     if not pode_ver and funcionario_logado.cargo.nivel > 1: # Diretor pode ver tudo
-        return render(request, 'hierarquia/sem_permissao.html')
+        return render(request, 'rh/sem_permissao.html')
     
     # Define se o usuário pode aprovar
     pode_aprovar = (
@@ -411,7 +411,7 @@ def detalhar_requisicao(request, requisicao_id):
         'pode_aprovar': pode_aprovar,
     }
     
-    return render(request, 'hierarquia/detalhar_requisicao.html', context)
+    return render(request, 'rh/detalhar_requisicao.html', context)
 
 
 @login_required(login_url='login')
@@ -420,11 +420,11 @@ def gerenciar_cargos(request):
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
-        return render(request, 'hierarquia/sem_acesso.html')
+        return render(request, 'rh/sem_acesso.html')
     
     # Apenas admin pode gerenciar
     if funcionario_logado.cargo.nivel != 1:
-        return render(request, 'hierarquia/sem_permissao.html')
+        return render(request, 'rh/sem_permissao.html')
     
     if request.method == 'POST':
         nome = request.POST.get('nome')
@@ -437,7 +437,7 @@ def gerenciar_cargos(request):
             descricao=descricao,
         )
         
-        return redirect('gerenciar_cargos')
+        return redirect('hierarquia/gerenciar_cargos')
     
     cargos = Cargo.objects.all()
     
@@ -456,11 +456,11 @@ def gerenciar_setores(request):
     try:
         funcionario_logado = request.user.funcionario
     except Funcionario.DoesNotExist:
-        return render(request, 'hierarquia/sem_acesso.html')
+        return render(request, 'rh/sem_acesso.html')
     
     # Apenas admin pode gerenciar
     if funcionario_logado.cargo.nivel != 1:
-        return render(request, 'hierarquia/sem_permissao.html')
+        return render(request, 'rh/sem_permissao.html')
     
     if request.method == 'POST':
         nome = request.POST.get('nome')
@@ -471,7 +471,7 @@ def gerenciar_setores(request):
             descricao=descricao,
         )
         
-        return redirect('gerenciar_setores')
+        return redirect('hierarquia/gerenciar_setores')
     
     setores = Setor.objects.all()
     
@@ -493,7 +493,7 @@ class BasePermissionMixin(LoginRequiredMixin, UserPassesTestMixin):
         if not self.request.user.is_authenticated:
             return super().handle_no_permission()
         # Se está autenticado mas não tem permissão/funcionário
-        return render(self.request, 'hierarquia/sem_acesso.html', {'mensagem': getattr(self, 'permission_denied_message', 'Acesso negado.')})
+        return render(self.request, 'rh/sem_acesso.html', {'mensagem': getattr(self, 'permission_denied_message', 'Acesso negado.')})
 
     def test_func(self):
         try:
@@ -549,13 +549,13 @@ class PodeAprovarMixin(BasePermissionMixin):
 
 class VagaListView(RHDPRequiredMixin, ListView):
     model = Vaga
-    template_name = 'hierarquia/vaga_list.html' # Criar este template
+    template_name = 'rh/vaga_list.html' # Criar este template
     context_object_name = 'vagas'
     ordering = ['-criado_em']
 
 class VagaCreateView(RHDPRequiredMixin, CreateView):
     model = Vaga
-    template_name = 'hierarquia/vaga_form.html' # Criar este template
+    template_name = 'rh/vaga_form.html' # Criar este template
     fields = [ # Liste os campos do seu modelo Vaga
         'titulo', 'setor', 'cargo', 'centro_custo', 'tipo_contratacao',
         'faixa_salarial_inicial', 'faixa_salarial_final', 'requisitos_tecnicos',
@@ -576,7 +576,7 @@ class VagaCreateView(RHDPRequiredMixin, CreateView):
 
 class VagaUpdateView(RHDPRequiredMixin, UpdateView):
     model = Vaga
-    template_name = 'hierarquia/vaga_form.html'
+    template_name = 'rh/vaga_form.html'
     fields = [ # Mesmos campos do CreateView
         'titulo', 'setor', 'cargo', 'centro_custo', 'tipo_contratacao',
         'faixa_salarial_inicial', 'faixa_salarial_final', 'requisitos_tecnicos',
@@ -596,14 +596,14 @@ class VagaUpdateView(RHDPRequiredMixin, UpdateView):
 
 class VagaDetailView(RHDPRequiredMixin, DetailView):
     model = Vaga
-    template_name = 'hierarquia/vaga_detail.html' # Criar este template (Opcional)
+    template_name = 'rh/vaga_detail.html' # Criar este template (Opcional)
     context_object_name = 'vaga'
 
 # --- ✅ NOVAS VIEWS PARA REQUISIÇÃO PESSOAL (RP) ---
 
 class RequisicaoPessoalCreateView(Nivel5RequiredMixin, CreateView):
     model = RequisicaoPessoal
-    template_name = 'hierarquia/rp_form.html' # Criar este template
+    template_name = 'rh/rp_form.html' # Criar este template
     fields = [ # Campos que o solicitante (Nível <=5) preenche
         'vaga', 'tipo_vaga', 'nome_substituido', 'motivo_substituicao',
         'local_trabalho', 'data_prevista_inicio', 'prazo_contratacao',
@@ -626,7 +626,7 @@ class RequisicaoPessoalCreateView(Nivel5RequiredMixin, CreateView):
 
 class MinhasRequisicoesListView(BasePermissionMixin, ListView):
     model = RequisicaoPessoal
-    template_name = 'hierarquia/minhas_rps_list.html' # Criar este template
+    template_name = 'rh/minhas_rps_list.html' # Criar este template
     context_object_name = 'requisicoes'
 
     def get_queryset(self):
@@ -634,7 +634,7 @@ class MinhasRequisicoesListView(BasePermissionMixin, ListView):
 
 class AprovarRequisicoesListView(BasePermissionMixin, ListView):
     model = RequisicaoPessoal
-    template_name = 'hierarquia/aprovar_rps_list.html' # Criar este template
+    template_name = 'rh/aprovar_rps_list.html' # Criar este template
     context_object_name = 'requisicoes'
 
     def get_queryset(self):
@@ -646,7 +646,7 @@ class AprovarRequisicoesListView(BasePermissionMixin, ListView):
 
 class RequisicaoPessoalDetailView(PodeAprovarMixin, DetailView): # Usa o Mixin de permissão
     model = RequisicaoPessoal
-    template_name = 'hierarquia/rp_detail.html' # Criar este template
+    template_name = 'rh/rp_detail.html' # Criar este template
     context_object_name = 'rp'
 
     def get_context_data(self, **kwargs):
@@ -684,7 +684,7 @@ def aprovar_rp_view(request, pk):
         messages.info(request, f"Requisição Pessoal #{rp.id} encaminhada para {rp.aprovador_atual.nome}.")
         # Notificar próximo aprovador?
 
-    return redirect('listar_rps_para_aprovar')
+    return redirect('rh/listar_rps_para_aprovar')
 
 @login_required(login_url='login')
 @require_POST
@@ -712,4 +712,4 @@ def rejeitar_rp_view(request, pk):
     messages.warning(request, f"Requisição Pessoal #{rp.id} rejeitada.")
     # Notificar solicitante?
 
-    return redirect('listar_rps_para_aprovar')
+    return redirect('rh/listar_rps_para_aprovar')
