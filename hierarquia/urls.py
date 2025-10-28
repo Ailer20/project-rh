@@ -29,6 +29,7 @@ urlpatterns = [
     path('rp/minhas/', views.MinhasRequisicoesListView.as_view(), name='minhas_rps'), # Solicitante vê suas RPs
     path('rp/aprovar/', views.AprovarRequisicoesListView.as_view(), name='listar_rps_para_aprovar'), # Aprovador vê RPs pendentes
     path('rp/<int:pk>/', views.RequisicaoPessoalDetailView.as_view(), name='detalhar_rp'), # Detalhes e botões Aprovar/Rejeitar
+    path('rp/editar-rh/<int:pk>/', views.RequisicaoPessoalRHUpdateView.as_view(), name='editar_rp_rh'),
     # Ações de Aprovar/Rejeitar (usando views baseadas em função)
     path('rp/<int:pk>/aprovar/', views.aprovar_rp_view, name='aprovar_rp'),
     path('rp/<int:pk>/rejeitar/', views.rejeitar_rp_view, name='rejeitar_rp'),

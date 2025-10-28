@@ -1,0 +1,7 @@
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" name="aprovar" class="btn btn-success">Aprovar Diretamente</button>
+    <button type="submit" name="editar_e_devolver" class="btn btn-warning">Salvar Alterações e Devolver ao Gestor</button>
+</form>

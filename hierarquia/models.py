@@ -4,8 +4,10 @@ from django.db import models
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 # ---------------------
+from django.http import HttpResponseForbidden
 from django.core.validators import RegexValidator
 from django.db.models import Q
+from django.utils import timezone
 # Validadores
 cpf_validator = RegexValidator(
     regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
@@ -299,15 +301,16 @@ class Vaga(models.Model):
 
 
 # Modelo RequisicaoPessoal ATUALIZADO com campos do PDF
+# Modelo RequisicaoPessoal ATUALIZADO com fluxo Gestor -> RH
 class RequisicaoPessoal(models.Model):
+    # --- 1. STATUS ATUALIZADOS PARA O NOVO FLUXO ---
     STATUS_RP_CHOICES = [
-        ('pendente_nivel_4', 'Pendente Supervisor'), # Nível 4 aprova
-        ('pendente_nivel_3', 'Pendente Coordenador'), # Nível 3 aprova
-        ('pendente_nivel_2', 'Pendente Gerente'),     # Nível 2 aprova
-        ('pendente_nivel_1', 'Pendente Diretor'),    # Nível 1 aprova
-        ('aprovada', 'Aprovada (RH)'),             # Aprovado por todos
+        ('pendente_gestor', 'Pendente Gestor/Coordenador'),
+        ('pendente_rh', 'Pendente RH'),
+        ('em_revisao_gestor', 'Em Revisão (Edição RH)'), # Novo status para o "vai-e-volta"
+        ('aprovada', 'Aprovada'),
         ('rejeitada', 'Rejeitada'),
-        ('cancelada', 'Cancelada'),
+        ('cancelada', 'Cancelada'), # Mantido
     ]
     TIPO_VAGA_CHOICES = [
         ('nova', 'Nova Posição'),
@@ -322,14 +325,13 @@ class RequisicaoPessoal(models.Model):
         ('outro', 'Outro'),
     ]
 
-    # --- Campos de Identificação ---
-    # numero_rp = models.CharField(max_length=20, unique=True, blank=True) # Opcional: Gerar um número único
+    # --- Campos de Identificação (Sem mudanças) ---
     vaga = models.ForeignKey(Vaga, on_delete=models.CASCADE, related_name='requisicoes', verbose_name="Vaga Solicitada")
     solicitante = models.ForeignKey(Funcionario, on_delete=models.PROTECT, related_name='rps_solicitadas', verbose_name="Solicitante")
     criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Data de Abertura")
     atualizado_em = models.DateTimeField(auto_now=True)
 
-    # --- Detalhes da Vaga (Informações da RP) ---
+    # --- Detalhes da Vaga (Sem mudanças) ---
     tipo_vaga = models.CharField(max_length=20, choices=TIPO_VAGA_CHOICES, default='nova', verbose_name="Tipo de Vaga")
     nome_substituido = models.CharField(max_length=200, blank=True, null=True, verbose_name="Nome do Substituído", help_text="Preencher se for Substituição.")
     motivo_substituicao = models.CharField(max_length=30, choices=MOTIVO_SUBSTITUICAO_CHOICES, blank=True, null=True, verbose_name="Motivo da Substituição")
@@ -339,130 +341,138 @@ class RequisicaoPessoal(models.Model):
     horario_trabalho = models.CharField(max_length=100, blank=True, verbose_name="Horário de Trabalho")
     justificativa_rp = models.TextField(verbose_name="Justificativa da Contratação", help_text="Descreva a necessidade desta contratação.")
 
-    # --- Controle de Aprovação ---
+    # --- 2. CONTROLE DE APROVAÇÃO ATUALIZADO ---
     status = models.CharField(max_length=30, choices=STATUS_RP_CHOICES, verbose_name="Status da Requisição") # Default será definido no save()
     aprovador_atual = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='rps_para_aprovar', verbose_name="Próximo Aprovador")
-    observacoes_aprovador = models.TextField(blank=True, verbose_name="Observações do Aprovador")
+    
+    # Campo antigo 'observacoes_aprovador' removido para evitar confusão
+    
+    # NOVOS CAMPOS para o fluxo "vai-e-volta"
+    justificativa_edicao_rh = models.TextField(blank=True, null=True, help_text="Justificativa da edição feita pelo RH para o gestor revisar.")
+    observacao_rejeicao = models.TextField(blank=True, null=True, help_text="Motivo da rejeição final.")
 
-    # --- Histórico de Aprovação (Opcional, mas recomendado) ---
-    aprovado_por_supervisor = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
-    data_aprovacao_supervisor = models.DateTimeField(null=True, blank=True)
-    aprovado_por_coordenador = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
-    data_aprovacao_coordenador = models.DateTimeField(null=True, blank=True)
-    aprovado_por_gerente = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
-    data_aprovacao_gerente = models.DateTimeField(null=True, blank=True)
-    aprovado_por_diretor = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
-    data_aprovacao_diretor = models.DateTimeField(null=True, blank=True)
-    # Quem rejeitou (se aplicável)
+
+    # --- 3. HISTÓRICO SIMPLIFICADO ---
+    # (Opcional, mas mais simples que o anterior)
+    aprovado_por_gestor = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_gestor = models.DateTimeField(null=True, blank=True)
+    aprovado_por_rh = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_rh = models.DateTimeField(null=True, blank=True)
     rejeitado_por = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     data_rejeicao = models.DateTimeField(null=True, blank=True)
 
 
     def __str__(self):
-        # numero = f"RP {self.numero_rp}: " if hasattr(self, 'numero_rp') and self.numero_rp else ""
-        numero = f"RP #{self.id}: " # Usando o ID por enquanto
+        numero = f"RP #{self.id}: "
         return f"{numero}{self.vaga.titulo} por {self.solicitante.nome}"
 
-    def _encontrar_proximo_aprovador(self, nivel_atual_aprovador=None):
-        """
-        Lógica interna para encontrar o próximo superior na hierarquia.
-        Assume que existe o campo 'superior_imediato' no modelo Funcionario.
-        Precisa ser adaptada à sua estrutura hierárquica real.
-        """
-        ultimo_aprovador = nivel_atual_aprovador or self.solicitante
-        if not ultimo_aprovador or not hasattr(ultimo_aprovador, 'superior_imediato'):
-            return None # Não há como subir na hierarquia
+    # --- 4. NOVA FUNÇÃO AUXILIAR ---
+    def get_rh_approver(self):
+        """ Encontra o aprovador do RH (Gestor ou Coordenador do setor de RH) """
+        try:
+            # Tenta encontrar Gestor (Nível 2) ou Coordenador (Nível 3) do setor de RH
+            # AJUSTE 'RECURSOS HUMANOS' para o nome exato do seu setor de RH no banco
+            rh_approver = Funcionario.objects.filter(
+                setor_primario__nome__iexact="RECURSOS HUMANOS",
+                cargo__nivel__in=[2, 3], # Nível 2 (Gestor) ou 3 (Coordenador)
+                ativo=True
+            ).order_by('cargo__nivel').first() # Pega o de nível mais alto (Gestor) primeiro
+            
+            if rh_approver:
+                return rh_approver
+            
+            # Fallback: Se não achar, pega o Diretor (Nível 1)
+            return Funcionario.objects.get(cargo__nivel=1, ativo=True)
 
-        superior = ultimo_aprovador.superior_imediato
-        while superior and superior.cargo and superior.cargo.nivel >= ultimo_aprovador.cargo.nivel:
-            # Continua subindo se o superior tem nível igual ou maior (procura alguém com nível menor)
-            if not hasattr(superior, 'superior_imediato'): return None # Chegou ao topo sem achar
-            superior = superior.superior_imediato
-            if superior == ultimo_aprovador: break # Evita loop infinito
+        except Exception:
+            # Fallback final: Pega o Diretor (Nível 1)
+            return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
 
-        return superior # Retorna o primeiro superior com nível MENOR encontrado
-
+    # --- 5. LÓGICA DE APROVADOR INICIAL (CORRIGIDA) ---
     def set_initial_approver(self):
         """Define o status e o aprovador inicial ao criar a RP."""
-        # Encontra o primeiro superior com nível 4 (Supervisor) ou menor
-        aprovador = self.solicitante
-        while aprovador and aprovador.cargo and aprovador.cargo.nivel > 4:
-             if not hasattr(aprovador, 'superior_imediato'):
-                 aprovador = None; break
-             aprovador = aprovador.superior_imediato
-             if aprovador == self.solicitante: break # Evita loop
+        # Usa a função `obter_superiores()` que JÁ EXISTE E FUNCIONA
+        superiores = self.solicitante.obter_superiores()
+        
+        # Tenta encontrar o Coordenador (Nível 3) ou Gestor (Nível 2)
+        # Níveis 2=Gestor, 3=Coordenador
+        gestor_ou_coordenador = superiores.filter(cargo__nivel__in=[2, 3]).order_by('cargo__nivel').first()
 
-        if aprovador and aprovador.cargo and aprovador.cargo.nivel <= 4:
-            self.aprovador_atual = aprovador
-            # Define o status inicial baseado no nível do primeiro aprovador
-            if aprovador.cargo.nivel == 4: self.status = 'pendente_nivel_4'
-            elif aprovador.cargo.nivel == 3: self.status = 'pendente_nivel_3'
-            elif aprovador.cargo.nivel == 2: self.status = 'pendente_nivel_2'
-            elif aprovador.cargo.nivel == 1: self.status = 'pendente_nivel_1'
-            else: self.status = 'pendente_nivel_1' # Segurança: cai para o diretor
+        if gestor_ou_coordenador:
+            self.aprovador_atual = gestor_ou_coordenador
+            self.status = 'pendente_gestor'
         else:
-            # Se não encontrar ninguém na cadeia até Nível 4, vai direto pro Diretor (Nível 1)
-            try:
-                diretor = Funcionario.objects.filter(cargo__nivel=1).first() # Assume que há um diretor
-                self.aprovador_atual = diretor
-                self.status = 'pendente_nivel_1'
-            except Funcionario.DoesNotExist:
-                 self.status = 'aprovada' # Ou um status de erro? Se não há diretor...
-                 self.aprovador_atual = None
-
+            # Se não achar Gestor (ex: um gestor abriu a RP), vai direto pro RH
+            self.aprovador_atual = self.get_rh_approver()
+            self.status = 'pendente_rh'
 
     def save(self, *args, **kwargs):
-        is_new = self._state.adding # Verifica se é uma nova instância
-        if is_new:
-            # Define o status e aprovador inicial SOMENTE na criação
+        is_new = self._state.adding
+        if is_new and not self.status: # Define SÓ se for novo e o status não estiver definido
             self.set_initial_approver()
-        super().save(*args, **kwargs) # Salva o objeto
+        super().save(*args, **kwargs)
 
+    # --- 6. MÁQUINA DE ESTADOS (AVANÇAR) ---
     def avancar_aprovacao(self, aprovador_que_aprovou):
-        """Move a RP para o próximo nível de aprovação."""
+        """ Move a RP para o próximo estágio (Gestor -> RH -> Aprovada) """
         now = timezone.now()
-        nivel_aprovador = aprovador_que_aprovou.cargo.nivel
 
-        # Registra quem aprovou e quando
-        if nivel_aprovador == 4:
-            self.aprovado_por_supervisor = aprovador_que_aprovou
-            self.data_aprovacao_supervisor = now
-        elif nivel_aprovador == 3:
-            self.aprovado_por_coordenador = aprovador_que_aprovou
-            self.data_aprovacao_coordenador = now
-        elif nivel_aprovador == 2:
-             self.aprovado_por_gerente = aprovador_que_aprovou
-             self.data_aprovacao_gerente = now
-        elif nivel_aprovador == 1:
-             self.aprovado_por_diretor = aprovador_que_aprovou
-             self.data_aprovacao_diretor = now
+        # Cenário 1: Gestor está aprovando (primeira vez ou re-aprovação)
+        if self.status == 'pendente_gestor' or self.status == 'em_revisao_gestor':
+            self.aprovado_por_gestor = aprovador_que_aprovou
+            self.data_aprovacao_gestor = now
+            
+            # Limpa a justificativa de edição (caso seja uma re-aprovação)
+            self.justificativa_edicao_rh = None 
+            
+            # Próximo passo: RH
+            self.status = 'pendente_rh'
+            self.aprovador_atual = self.get_rh_approver()
 
-        # Encontra o próximo aprovador (alguém com nível MENOR que o atual)
-        proximo_aprovador = self._encontrar_proximo_aprovador(nivel_atual_aprovador=aprovador_que_aprovou)
-
-        if proximo_aprovador and proximo_aprovador.cargo:
-            self.aprovador_atual = proximo_aprovador
-            # Define o novo status pendente
-            prox_nivel = proximo_aprovador.cargo.nivel
-            if prox_nivel == 3: self.status = 'pendente_nivel_3'
-            elif prox_nivel == 2: self.status = 'pendente_nivel_2'
-            elif prox_nivel == 1: self.status = 'pendente_nivel_1'
-            else: self.status = 'pendente_nivel_1' # Segurança
-        else:
-            # Não há mais ninguém para aprovar -> APROVADA (final do fluxo)
+        # Cenário 2: RH está aprovando
+        elif self.status == 'pendente_rh':
+            self.aprovado_por_rh = aprovador_que_aprovou
+            self.data_aprovacao_rh = now
+            
+            # Próximo passo: Fim do fluxo
             self.status = 'aprovada'
-            self.aprovador_atual = None
+            self.aprovador_atual = None # Ninguém mais precisa aprovar
 
         self.save()
 
+    # --- 7. REJEITAR (ATUALIZADO) ---
     def rejeitar(self, aprovador_que_rejeitou, observacao):
-        """Marca a RP como rejeitada."""
+        """ Marca a RP como rejeitada. """
         self.status = 'rejeitada'
         self.rejeitado_por = aprovador_que_rejeitou
         self.data_rejeicao = timezone.now()
-        self.observacoes_aprovador = observacao
+        self.observacao_rejeicao = observacao
         self.aprovador_atual = None
         self.save()
+
+    # --- 8. DEVOLVER PARA GESTOR (NOVA FUNÇÃO) ---
+    def devolver_para_gestor(self, rh_editor, justificativa):
+        """ O RH edita e devolve para o Gestor re-aprovar. """
+        if self.status != 'pendente_rh':
+            # Só pode fazer isso se estiver pendente no RH
+            return
+
+        self.status = 'em_revisao_gestor'
+        self.justificativa_edicao_rh = justificativa
+        
+        # Encontra o Gestor original (Nível 2 ou 3) do solicitante
+        superiores = self.solicitante.obter_superiores()
+        gestor_original = superiores.filter(cargo__nivel__in=[2, 3]).order_by('cargo__nivel').first()
+
+        if gestor_original:
+            self.aprovador_atual = gestor_original
+        else:
+            # Fallback: Se não achar, manda pro RH de novo (estranho, mas seguro)
+            self.aprovador_atual = self.get_rh_approver()
+            self.status = 'pendente_rh' # Volta pro RH
+            
+        self.save()
+
 
     class Meta:
         verbose_name = "Requisição Pessoal"

@@ -713,3 +713,69 @@ def rejeitar_rp_view(request, pk):
     # Notificar solicitante?
 
     return redirect('rh/listar_rps_para_aprovar')
+class RequisicaoPessoalRHUpdateView(RHDPRequiredMixin, UpdateView):
+    """
+    View exclusiva para o RH editar uma RP e APROVAR ou DEVOLVER ao Gestor.
+    """
+    model = RequisicaoPessoal
+    template_name = 'rh/rp_form_rh_edit.html' # --- CRIE ESTE NOVO TEMPLATE ---
+    context_object_name = 'rp'
+    # Campos que o RH pode editar:
+    fields = [
+        # Coloque aqui os campos da Vaga que o RH pode "sobrescrever" na RP
+        # Ex: 'faixa_salarial_inicial', 'faixa_salarial_final', 
+        # E o campo de justificativa da edição:
+        'justificativa_edicao_rh' 
+    ]
+    success_url = reverse_lazy('listar_rps_para_aprovar') # Volta para a lista do RH
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Torna a justificativa obrigatória APENAS se for devolver
+        form.fields['justificativa_edicao_rh'].required = False
+        form.fields['justificativa_edicao_rh'].help_text = "Preencha APENAS se for 'Editar e Devolver'."
+        return form
+
+    def test_func(self):
+        # Garante que é do RH e que a RP está pendente no RH
+        if not super().test_func():
+            return False
+        rp = self.get_object()
+        return rp.status == 'pendente_rh'
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        
+        # Validação extra: Só o aprovador atual (do RH) pode mexer
+        if self.object.aprovador_atual != self.funcionario_logado:
+             return HttpResponseForbidden("Você não é o aprovador atual desta requisição.")
+
+        if 'aprovar' in request.POST:
+            # --- Se o RH clicar em "APROVAR" ---
+            self.object.avancar_aprovacao(aprovador_que_aprovou=self.funcionario_logado)
+            messages.success(request, f"Requisição Pessoal #{self.object.id} APROVADA com sucesso.")
+            return redirect(self.get_success_url())
+
+        elif 'editar_e_devolver' in request.POST:
+            # --- Se o RH clicar em "EDITAR E DEVOLVER" ---
+            if form.is_valid():
+                justificativa = form.cleaned_data.get('justificativa_edicao_rh')
+                if not justificativa:
+                    form.add_error('justificativa_edicao_rh', 'A justificativa é obrigatória para devolver ao gestor.')
+                    return self.form_invalid(form)
+                
+                # Salva as mudanças feitas no formulário
+                form.save() 
+                
+                # Chama a nova função do modelo
+                self.object.devolver_para_gestor(
+                    rh_editor=self.funcionario_logado,
+                    justificativa=justificativa
+                )
+                messages.info(request, f"Requisição #{self.object.id} atualizada e devolvida para revisão do Gestor.")
+                return redirect(self.get_success_url())
+            else:
+                return self.form_invalid(form)
+        
+        return redirect('detalhar_rp', pk=self.object.pk)

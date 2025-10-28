@@ -66,16 +66,33 @@
         }
         .btn-approve { background: #28a745; } /* Verde */
         .btn-reject { background: #dc3545; } /* Vermelho */
+        .btn-edit-rh { background: #007bff; } /* Azul */
         .btn-approve:hover { background: #218838; }
         .btn-reject:hover { background: #c82333; }
+        .btn-edit-rh:hover { background: #0069d9; }
 
-        /* Badges de Status da RP */
+        /* --- ✅ MUDANÇA 1: Classes de Status CSS Atualizadas --- */
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; margin-left: 10px; }
-        .status-pendente_nivel_4, .status-pendente_nivel_3, .status-pendente_nivel_2, .status-pendente_nivel_1 { background-color: #ffc107; color: #333; }
+        .status-pendente_gestor, .status-pendente_rh { background-color: #ffc107; color: #333; }
+        .status-em_revisao_gestor { background-color: #fd7e14; color: white; } /* Laranja para revisão */
         .status-aprovada { background-color: #28a745; color: white; }
         .status-rejeitada { background-color: #dc3545; color: white; }
         .status-cancelada { background-color: #6c757d; color: white; }
 
+        /* Alerta de Revisão */
+        .alert-revisao-rh {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        body.dark-theme .alert-revisao-rh {
+            background-color: #493f22;
+            border-color: #6d5f34;
+            color: #ffeeba;
+        }
     </style>
 {% endblock extra_css %}
 
@@ -91,6 +108,15 @@
             <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
+
+    {% if rp.status == 'em_revisao_gestor' and rp.justificativa_edicao_rh %}
+    <div class="alert-revisao-rh">
+        <h4><i class="fas fa-exclamation-triangle"></i> Atenção: O RH editou esta requisição!</h4>
+        <p>Por favor, revise os detalhes abaixo e aprove ou rejeite novamente.</p>
+        <p><strong>Justificativa do RH:</strong> {{ rp.justificativa_edicao_rh|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
 
     <div class="card detail-card">
         <div class="detail-section">
@@ -129,46 +155,64 @@
         <div class="detail-section">
             <h3>Histórico de Aprovação</h3>
             <div class="detail-item"><strong>Status Atual:</strong> <span>{{ rp.get_status_display }}</span></div>
+            
             {% if rp.status == 'rejeitada' %}
-            <div class="detail-item"><strong>Rejeitado Por:</strong> <span>{{ rp.rejeitado_por.nome|default:"-" }} em {{ rp.data_rejeicao|date:"d/m/Y H:i"|default:"-" }}</span></div>
-            <div class="detail-item"><strong>Observação:</strong> <span style="color: #dc3545;">{{ rp.observacoes_aprovador|default:"-" }}</span></div>
+                <div class="detail-item"><strong>Rejeitado Por:</strong> <span>{{ rp.rejeitado_por.nome|default:"-" }} em {{ rp.data_rejeicao|date:"d/m/Y H:i"|default:"-" }}</span></div>
+                <div class="detail-item"><strong>Observação:</strong> <span style="color: #dc3545;">{{ rp.observacao_rejeicao|default:"-" }}</span></div>
+            
             {% elif rp.aprovador_atual %}
-            <div class="detail-item"><strong>Aguardando Aprovação de:</strong> <span>{{ rp.aprovador_atual.nome }}</span></div>
+                <div class="detail-item"><strong>Aguardando Aprovação de:</strong> <span>{{ rp.aprovador_atual.nome }}</span></div>
             {% endif %}
 
-            {% if rp.aprovado_por_supervisor %}
-            <div class="detail-item"><strong>Aprovado por Supervisor:</strong> <span>{{ rp.aprovado_por_supervisor.nome }} em {{ rp.data_aprovacao_supervisor|date:"d/m/Y H:i" }}</span></div>
+            {% if rp.aprovado_por_gestor %}
+            <div class="detail-item"><strong>Aprovado por Gestor:</strong> <span>{{ rp.aprovado_por_gestor.nome }} em {{ rp.data_aprovacao_gestor|date:"d/m/Y H:i" }}</span></div>
             {% endif %}
-            {% if rp.aprovado_por_coordenador %}
-            <div class="detail-item"><strong>Aprovado por Coordenador:</strong> <span>{{ rp.aprovado_por_coordenador.nome }} em {{ rp.data_aprovacao_coordenador|date:"d/m/Y H:i" }}</span></div>
+            {% if rp.aprovado_por_rh %}
+            <div class="detail-item"><strong>Aprovado por RH:</strong> <span>{{ rp.aprovado_por_rh.nome }} em {{ rp.data_aprovacao_rh|date:"d/m/Y H:i" }}</span></div>
             {% endif %}
-            {% if rp.aprovado_por_gerente %}
-            <div class="detail-item"><strong>Aprovado por Gerente:</strong> <span>{{ rp.aprovado_por_gerente.nome }} em {{ rp.data_aprovacao_gerente|date:"d/m/Y H:i" }}</span></div>
-            {% endif %}
-            {% if rp.aprovado_por_diretor %}
-            <div class="detail-item"><strong>Aprovado por Diretor:</strong> <span>{{ rp.aprovado_por_diretor.nome }} em {{ rp.data_aprovacao_diretor|date:"d/m/Y H:i" }}</span></div>
-            {% endif %}
+
         </div>
 
         {% if pode_aprovar_rejeitar %}
         <div class="approval-section">
             <h3>Sua Ação</h3>
-            <form method="post" action="{% url 'rejeitar_rp' rp.pk %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="observacao">Observação (Obrigatória para Rejeitar):</label>
-                    <textarea name="observacao" id="observacao" rows="3" placeholder="Informe o motivo da rejeição..."></textarea>
-                </div>
-                <div class="approval-actions">
-                    {# Botão de Aprovar (formulário simples) #}
-                    <form method="post" action="{% url 'aprovar_rp' rp.pk %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-approve"><i class="fas fa-check"></i> Aprovar e Encaminhar</button>
+
+            {% if rp.status == 'pendente_rh' %}
+                <p>Como aprovador de RH, você pode rejeitar diretamente ou analisar/editar a requisição (para aprovar ou devolver ao gestor).</p>
+                <form method="post" action="{% url 'rejeitar_rp' rp.pk %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="observacao_rh">Observação (Obrigatória para Rejeitar):</label>
+                        <textarea name="observacao" id="observacao_rh" rows="3" placeholder="Informe o motivo da rejeição..."></textarea>
+                    </div>
+                    <div class="approval-actions">
+                        <a href="{% url 'editar_rp_rh' rp.pk %}" class="btn-edit-rh"><i class="fas fa-edit"></i> Analisar / Editar</a>
+                        
+                        <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
+                    </div>
+                </form>
+
+            {% elif rp.status == 'pendente_gestor' or rp.status == 'em_revisao_gestor' %}
+                <p>Como gestor/coordenador, você pode aprovar para encaminhar ao RH ou rejeitar esta requisição.</p>
+                
+                <form method="post" action="{% url 'rejeitar_rp' rp.pk %}" id="form-rejeitar">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="observacao_gestor">Observação (Obrigatória para Rejeitar):</label>
+                        <textarea name="observacao" id="observacao_gestor" rows="3" placeholder="Informe o motivo da rejeição..."></textarea>
+                    </div>
+                </form>
+
+                <form method="post" action="{% url 'aprovar_rp' rp.pk %}" id="form-aprovar">
+                    {% csrf_token %}
                     </form>
-                    {# Botão de Rejeitar (usa o formulário acima) #}
-                    <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
+
+                <div class="approval-actions">
+                    <button type="submit" form="form-aprovar" class="btn-approve"><i class="fas fa-check"></i> Aprovar e Encaminhar ao RH</button>
+                    <button type="submit" form="form-rejeitar" class="btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
                 </div>
-            </form>
+
+            {% endif %}
         </div>
         {% endif %}
 
