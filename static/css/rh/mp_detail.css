@@ -1,0 +1,230 @@
+/* static/css/rh/mp_detail.css */
+
+/* --- Header da Página --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+/* --- Card Principal --- */
+.detail-card {
+    max-width: 900px;
+    margin: 0 auto 30px auto;
+    background: var(--bg-primary);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    padding: 30px;
+}
+
+/* --- Seções de Detalhes --- */
+.detail-section {
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--border-color); /* Linha linear */
+}
+.detail-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.detail-section h3 {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--bg-sidebar); /* Azul do sistema */
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+/* --- Itens (Chave/Valor) --- */
+.detail-item {
+    display: flex;
+    margin-bottom: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+.detail-item strong {
+    color: var(--text-primary); /* Cor primária */
+    font-weight: 600;
+    width: 220px; /* Largura fixa para o label */
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+.detail-item span {
+    color: var(--text-secondary); /* Cor secundária */
+}
+/* Para spans com quebra de linha (textareas) */
+.detail-item span.pre-line {
+    white-space: pre-line;
+}
+
+
+/* --- Badges de Status --- */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+}
+.status-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.status-pendente_gestor_proposto,
+.status-pendente_gestor_atual,
+.status-pendente_rh {
+    background-color: #fff8e6; color: #b38600;
+}
+.status-pendente_gestor_proposto::before,
+.status-pendente_gestor_atual::before,
+.status-pendente_rh::before { background-color: #ffc107; }
+.status-aprovada {
+    background-color: #e6f7ec; color: #2d8653;
+}
+.status-aprovada::before { background-color: #28a745; }
+.status-rejeitada {
+    background-color: #ffebee; color: #b71c1c;
+}
+.status-rejeitada::before { background-color: #dc3545; }
+
+/* Dark Theme */
+body.dark-theme .status-pendente_gestor_proposto,
+body.dark-theme .status-pendente_gestor_atual,
+body.dark-theme .status-pendente_rh {
+    background-color: rgba(255, 193, 7, 0.2); color: #ffdc73;
+}
+body.dark-theme .status-aprovada {
+    background-color: rgba(40, 167, 69, 0.2); color: #5ddc83;
+}
+body.dark-theme .status-rejeitada {
+    background-color: rgba(220, 53, 69, 0.2); color: #ff8a80;
+}
+
+
+/* --- Alerta de Revisão (Não aplicável a MP por padrão, mas pode ser adicionado se necessário) --- */
+/* .alert-revisao-rh { ... } */
+
+/* --- Seção de Ação (Aprovar/Rejeitar) --- */
+.approval-section {
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 1px solid var(--border-color);
+}
+.approval-section p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+/* Estilos do formulário (textarea) */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.form-group label {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+}
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 15px;
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+    min-height: 100px;
+    resize: vertical;
+}
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--bg-sidebar);
+    box-shadow: 0 0 0 3px rgba(47, 70, 115, 0.2);
+}
+
+/* Botões de Ação */
+.approval-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 15px;
+}
+.btn {
+    text-decoration: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+/* Botão Aprovar (Verde) */
+.btn-approve {
+    background-color: #28a745;
+    color: #FFFFFF;
+}
+.btn-approve:hover {
+    background-color: #218838;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    transform: translateY(-2px);
+}
+/* Botão Rejeitar (Vermelho) */
+.btn-reject {
+    background-color: #dc3545;
+    color: #FFFFFF;
+}
+.btn-reject:hover {
+    background-color: #c82333;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    transform: translateY(-2px);
+}
+/* Botão Editar (Azul) - Não usado aqui por padrão, mas mantido */
+.btn-edit-rh {
+    background-color: #007bff;
+    color: #FFFFFF;
+}
+.btn-edit-rh:hover {
+    background-color: #0069d9;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Botão de Voltar (no final da página) */
+.btn-cancel {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+.btn-cancel:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}

@@ -112,6 +112,22 @@
                                     <i class="fas fa-sitemap fa-fw"></i> <span class="menu-text">Gerenciar Setores</span>
                                 </a>
                             {% endif %}
+                            {# ✅ NOVO: Link para Abrir MP (usa a mesma permissão de Abrir RP?) #}
+                            {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}                                
+                                <a href="{% url 'criar_mp' %}" class="menu-item {% if request.resolver_match.url_name == 'criar_mp' %}active{% endif %}">
+                                    <i class="fas fa-people-arrows fa-fw"></i> <span class="menu-text">Solicitar MP</span>
+                                </a>
+                            {% endif %}
+                            {# ✅ NOVO: Link para Minhas MPs #}
+                            <a href="{% url 'minhas_mps' %}" class="menu-item {% if request.resolver_match.url_name == 'minhas_mps' %}active{% endif %}">
+                                <i class="fas fa-list-alt fa-fw"></i> <span class="menu-text">Minhas MPs</span>
+                            </a>
+                            {# ✅ NOVO: Link para Aprovar MPs (usa a mesma permissão de Aprovar RPs?) #}
+                            {% if user.is_superuser or eh_rh or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 4 %}
+                                <a href="{% url 'listar_mps_para_aprovar' %}" class="menu-item {% if request.resolver_match.url_name == 'listar_mps_para_aprovar' %}active{% endif %}">
+                                    <i class="fas fa-user-check fa-fw"></i> <span class="menu-text">Aprovar MPs</span>
+                                </a>
+                            {% endif %}
                          {# Se for Superuser mas NÃO tiver perfil Funcionario (pouco provável, mas seguro) #}
                          {% elif user.is_superuser %}
                                 <a href="{% url 'criar_rp' %}" class="menu-item {% if request.resolver_match.url_name == 'criar_rp' %}active{% endif %}"><i class="fas fa-user-plus fa-fw"></i> <span class="menu-text">Abrir RP</span></a>

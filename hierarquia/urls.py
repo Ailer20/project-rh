@@ -35,6 +35,16 @@ urlpatterns = [
     path('rp/<int:pk>/aprovar/', views.aprovar_rp_view, name='aprovar_rp'),
     path('rp/<int:pk>/rejeitar/', views.rejeitar_rp_view, name='rejeitar_rp'),
 
+    # --- ✅ NOVAS URLs PARA MOVIMENTAÇÃO PESSOAL (MP) ---
+    path('mp/nova/', views.MovimentacaoPessoalCreateView.as_view(), name='criar_mp'),
+    path('mp/minhas/', views.MinhasMovimentacoesListView.as_view(), name='minhas_mps'),
+    path('mp/aprovar/', views.AprovarMovimentacoesListView.as_view(), name='listar_mps_para_aprovar'),
+    path('mp/<int:pk>/', views.MovimentacaoPessoalDetailView.as_view(), name='detalhar_mp'),
+    # Funções de ação MP
+    path('mp/<int:pk>/aprovar/post/', views.aprovar_mp_view, name='aprovar_mp'),
+    path('mp/<int:pk>/rejeitar/post/', views.rejeitar_mp_view, name='rejeitar_mp'),
+    # ---------------------------------------------------
+
     # --- Requisições Gerais (Verifique se são as RPs ou outras) ---
     # Se estas views forem para as RPs, você pode querer renomeá-las ou removê-las
     # Se forem para outro tipo de requisição, mantenha-as

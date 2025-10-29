@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Minhas Movimentações" }}{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/minhas_mps_list.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="minhas-mps-container">
+
+    <div class="page-header">
+        <h1>{{ titulo_pagina|default:"Minhas Solicitações de Movimentação" }}</h1>
+        {# Botão para criar nova MP #}
+        <a href="{% url 'criar_mp' %}" class="btn-add"><i class="fas fa-plus"></i> Solicitar Movimentação</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if movimentacoes %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Funcionário</th>
+                        <th>Tipo</th>
+                        <th>Cargo Proposto</th>
+                        <th>Setor Proposto</th>
+                        <th>Data Solicitação</th>
+                        <th>Status</th>
+                        <th>Próximo Aprovador</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mp in movimentacoes %}
+                    <tr>
+                        <td>#{{ mp.id }}</td>
+                        <td><strong>{{ mp.funcionario_movido.nome }}</strong></td>
+                        <td>{{ mp.get_tipo_movimentacao_display }}</td>
+                        <td>{{ mp.cargo_proposto.nome }}</td>
+                        <td>{{ mp.setor_proposto.nome }}</td>
+                        <td>{{ mp.criado_em|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <span class="status-badge status-{{ mp.status }}">
+                                {{ mp.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if mp.aprovador_atual %}
+                                {{ mp.aprovador_atual.nome }}
+                            {% elif mp.status == 'aprovada' %}
+                                <span class="status-aprovada" style="font-weight: 600;">Concluído</span>
+                            {% elif mp.status == 'rejeitada' %}
+                                <span class="status-rejeitada" style="font-weight: 600;">Rejeitado</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhar_mp' mp.pk %}" class="btn-action-detail"><i class="fas fa-eye"></i> Detalhes</a>
+                            {# Adicionar botão de cancelar se a lógica permitir #}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Adicionar paginação se houver muitas MPs #}
+        {% if is_paginated %}
+            <div class="pagination" style="margin-top: 20px; text-align: center;">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">&laquo; Primeira</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                    {% endif %}
+
+                    <span class="current">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+        {% endif %}
+
+    {% else %}
+        <div class="no-results">
+            {# O ícone vem do CSS #}
+            <h4>Nenhuma Movimentação Solicitada</h4>
+            <p>Você ainda não solicitou nenhuma Movimentação Pessoal.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock content %}

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Funcionario, Cargo, Setor, CentroServico, Requisicao, Vaga, RequisicaoPessoal
+from .models import Funcionario, Cargo, Setor, CentroServico, Requisicao, Vaga, RequisicaoPessoal, MovimentacaoPessoal
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
@@ -909,3 +909,207 @@ class HistoricoRPListView(BasePermissionMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['titulo_pagina'] = "Histórico de Requisições Pessoais"
         return context
+    
+
+
+# --- ✅ NOVAS VIEWS PARA MOVIMENTAÇÃO PESSOAL (MP) ---
+
+# --- Mixin de Permissão Específico para MP (Adaptado do PodeAprovarMixin) ---
+class PodeVerMPMixin(BasePermissionMixin):
+    """ Verifica se o usuário pode ver uma MP específica """
+    permission_denied_message = 'Você não tem permissão para acessar esta movimentação.'
+
+    def test_func(self):
+        if not super().test_func(): return False
+        mp = self.get_object() # Pega a MP da DetailView
+        user_func = self.funcionario_logado
+
+        # Permissões para VER:
+        # 1. É o solicitante?
+        # 2. É o funcionário sendo movido?
+        # 3. É o aprovador atual?
+        # 4. É um dos aprovadores anteriores?
+        # 5. É do RH/DP? (Requer a tag ou lógica similar)
+        # 6. É Diretor (Nível 1)?
+
+        is_rh_dp = False
+        if user_func.setor_primario:
+             rh_dp_setores = ['RECURSOS HUMANOS', 'DEPARTAMENTO DE PESSOAL']
+             if user_func.setor_primario.nome.upper() in rh_dp_setores:
+                  is_rh_dp = True
+
+        pode_ver = (
+            mp.solicitante == user_func or
+            mp.funcionario_movido == user_func or
+            mp.aprovador_atual == user_func or
+            mp.aprovado_por_gestor_proposto == user_func or
+            mp.aprovado_por_gestor_atual == user_func or
+            mp.aprovado_por_rh == user_func or
+            mp.rejeitado_por == user_func or
+            is_rh_dp or
+            user_func.cargo.nivel == 1
+        )
+        return pode_ver
+
+# --- View para Criar MP ---
+class MovimentacaoPessoalCreateView(Nivel5RequiredMixin, CreateView): # ADMs e superiores podem criar
+    model = MovimentacaoPessoal
+    template_name = 'rh/mp_form.html' # <- Vamos criar este template
+    # Lista de campos que o ADM preenche
+    fields = [
+        'funcionario_movido',
+        'cargo_proposto',
+        'setor_proposto',
+        'salario_proposto',
+        'tipo_movimentacao',
+        'data_efetiva',
+        'justificativa',
+        # 'anexo' # Descomente se adicionar anexo
+    ]
+    success_url = reverse_lazy('minhas_mps') # <- Nova URL
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Opcional: Filtrar queryset de 'funcionario_movido' para mostrar apenas ativos?
+        form.fields['funcionario_movido'].queryset = Funcionario.objects.filter(ativo=True).order_by('nome')
+        form.fields['cargo_proposto'].queryset = Cargo.objects.order_by('nivel', 'nome')
+        form.fields['setor_proposto'].queryset = Setor.objects.order_by('nome')
+        # Aplica widget de data
+        form.fields['data_efetiva'].widget = forms.DateInput(attrs={'type': 'date'})
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo_pagina'] = "Solicitar Movimentação Pessoal"
+        return context
+
+    def form_valid(self, form):
+        # Associa o solicitante (quem está logado)
+        form.instance.solicitante = self.funcionario_logado
+        
+        # Pega o funcionário selecionado para preencher dados atuais (opcional)
+        funcionario_selecionado = form.cleaned_data.get('funcionario_movido')
+        if funcionario_selecionado:
+            form.instance.cargo_atual = funcionario_selecionado.cargo
+            form.instance.setor_atual = funcionario_selecionado.setor_primario
+            # form.instance.salario_atual = ... # Adicionar busca do salário atual
+        
+        # A lógica de 'set_initial_approver' está no método save() do model
+        messages.success(self.request, "Solicitação de Movimentação aberta e enviada para aprovação.")
+        return super().form_valid(form)
+
+# --- View para Listar Minhas MPs ---
+class MinhasMovimentacoesListView(BasePermissionMixin, ListView):
+    model = MovimentacaoPessoal
+    template_name = 'rh/minhas_mps_list.html' # <- Vamos criar este template
+    context_object_name = 'movimentacoes'
+    paginate_by = 15
+
+    def get_queryset(self):
+        # Mostra MPs solicitadas pelo usuário logado
+        return MovimentacaoPessoal.objects.filter(solicitante=self.funcionario_logado).order_by('-criado_em')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo_pagina'] = "Minhas Solicitações de Movimentação"
+        return context
+
+# --- View para Listar MPs para Aprovar ---
+class AprovarMovimentacoesListView(BasePermissionMixin, ListView):
+    model = MovimentacaoPessoal
+    template_name = 'rh/aprovar_mps_list.html' # <- Vamos criar este template
+    context_object_name = 'movimentacoes'
+    paginate_by = 15
+
+    def get_queryset(self):
+        # Mostra MPs que estão aguardando aprovação do usuário logado
+        # E que não estão finalizadas (aprovada/rejeitada)
+        return MovimentacaoPessoal.objects.filter(
+            aprovador_atual=self.funcionario_logado
+        ).exclude(
+            status__in=['aprovada', 'rejeitada']
+        ).order_by('criado_em')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo_pagina'] = "Movimentações Pendentes de Aprovação"
+        return context
+
+# --- View para Detalhar uma MP ---
+class MovimentacaoPessoalDetailView(PodeVerMPMixin, DetailView): # Usa o Mixin específico
+    model = MovimentacaoPessoal
+    template_name = 'rh/mp_detail.html' # <- Vamos criar este template
+    context_object_name = 'mp' # Usaremos 'mp' no template
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        mp = self.object
+        user_func = self.funcionario_logado
+        
+        # Define se o usuário logado PODE aprovar/rejeitar esta MP
+        pode_agir = (
+            mp.aprovador_atual == user_func and 
+            mp.status not in ['aprovada', 'rejeitada']
+        )
+        context['pode_aprovar_rejeitar'] = pode_agir
+        context['titulo_pagina'] = f"Detalhes da Movimentação #{mp.id}"
+        return context
+
+# --- Funções para Aprovar e Rejeitar MP ---
+@login_required(login_url='login')
+@require_POST
+def aprovar_mp_view(request, pk):
+    mp = get_object_or_404(MovimentacaoPessoal, pk=pk)
+    try:
+        funcionario_logado = Funcionario.objects.get(usuario=request.user)
+    except Funcionario.DoesNotExist:
+        messages.error(request, "Funcionário não encontrado.")
+        return redirect('dashboard')
+
+    # Validação rigorosa: Só pode aprovar se for o aprovador atual e não estiver finalizada
+    if mp.aprovador_atual != funcionario_logado or mp.status in ['aprovada', 'rejeitada']:
+        messages.error(request, "Você não tem permissão para aprovar esta movimentação ou ela não está mais pendente.")
+        return redirect('detalhar_mp', pk=mp.pk) # <- Nova URL
+
+    # Chama o método do modelo para avançar
+    mp.avancar_aprovacao(aprovador_que_aprovou=funcionario_logado)
+
+    if mp.status == 'aprovada':
+        messages.success(request, f"Movimentação Pessoal #{mp.id} APROVADA com sucesso!")
+        # AQUI: Adicionar lógica para efetivar a movimentação (mudar cargo/setor/salário do funcionário_movido)
+        # Ex: mp.funcionario_movido.cargo = mp.cargo_proposto
+        #     mp.funcionario_movido.setor_primario = mp.setor_proposto
+        #     mp.funcionario_movido.save()
+        #     Notificar envolvidos?
+    else:
+        messages.info(request, f"Movimentação Pessoal #{mp.id} encaminhada para {mp.aprovador_atual.nome}.")
+        # Notificar próximo aprovador?
+
+    return redirect('listar_mps_para_aprovar') # <- Nova URL
+
+@login_required(login_url='login')
+@require_POST
+def rejeitar_mp_view(request, pk):
+    mp = get_object_or_404(MovimentacaoPessoal, pk=pk)
+    try:
+        funcionario_logado = Funcionario.objects.get(usuario=request.user)
+    except Funcionario.DoesNotExist:
+        messages.error(request, "Funcionário não encontrado.")
+        return redirect('dashboard')
+
+    # Validação
+    if mp.aprovador_atual != funcionario_logado or mp.status in ['aprovada', 'rejeitada']:
+        messages.error(request, "Você não tem permissão para rejeitar esta movimentação ou ela não está mais pendente.")
+        return redirect('detalhar_mp', pk=mp.pk) # <- Nova URL
+
+    observacao = request.POST.get('observacao', '')
+    if not observacao:
+        messages.error(request, "A observação é obrigatória para rejeitar a movimentação.")
+        return redirect('detalhar_mp', pk=mp.pk) # <- Nova URL
+
+    # Chama o método do modelo para rejeitar
+    mp.rejeitar(aprovador_que_rejeitou=funcionario_logado, observacao=observacao)
+    messages.warning(request, f"Movimentação Pessoal #{mp.id} REJEITADA.")
+    # Notificar solicitante?
+
+    return redirect('listar_mps_para_aprovar') # <- Nova URL

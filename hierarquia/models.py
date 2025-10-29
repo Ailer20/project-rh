@@ -490,3 +490,189 @@ class RequisicaoPessoal(models.Model):
         verbose_name = "Requisição Pessoal"
         verbose_name_plural = "Requisições Pessoais"
         ordering = ['-criado_em']
+
+class MovimentacaoPessoal(models.Model):
+    # --- Status do Fluxo ---
+    STATUS_MP_CHOICES = [
+        ('pendente_gestor_proposto', 'Pendente Gestor Proposto'),
+        ('pendente_gestor_atual', 'Pendente Gestor Atual'),
+        ('pendente_rh', 'Pendente RH'),
+        ('aprovada', 'Aprovada'),
+        ('rejeitada', 'Rejeitada'),
+    ]
+    # --- Tipos de Movimentação (Baseado no Excel/Imagens) ---
+    TIPO_MOVIMENTACAO_CHOICES = [
+        ('promocao', 'Promoção'),
+        ('transferencia', 'Transferência'),
+        ('aumento_salarial', 'Aumento Salarial'), # Adicionado como opção, pode ajustar
+        ('reclassificacao', 'Reclassificação'),   # Adicionado como opção, pode ajustar
+        ('outro', 'Outro'),
+    ]
+
+    # --- Dados do Solicitante e Funcionário ---
+    solicitante = models.ForeignKey(Funcionario, on_delete=models.PROTECT, related_name='mps_solicitadas', verbose_name="Solicitante (ADM)")
+    funcionario_movido = models.ForeignKey(Funcionario, on_delete=models.PROTECT, related_name='movimentacoes', verbose_name="Funcionário a ser Movido")
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Data da Solicitação")
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    # --- Dados Atuais (Podem ser preenchidos via JS ou na View) ---
+    cargo_atual = models.ForeignKey(Cargo, on_delete=models.PROTECT, related_name='+', verbose_name="Cargo Atual", null=True, blank=True)
+    setor_atual = models.ForeignKey(Setor, on_delete=models.PROTECT, related_name='+', verbose_name="Setor Atual", null=True, blank=True)
+    salario_atual = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Salário Atual")
+    # Adicione centro_custo_atual se necessário
+
+    # --- Dados Propostos ---
+    cargo_proposto = models.ForeignKey(Cargo, on_delete=models.PROTECT, related_name='+', verbose_name="Cargo Proposto")
+    setor_proposto = models.ForeignKey(Setor, on_delete=models.PROTECT, related_name='+', verbose_name="Setor Proposto")
+    salario_proposto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Salário Proposto")
+    # Adicione centro_custo_proposto se necessário
+    
+    tipo_movimentacao = models.CharField(max_length=30, choices=TIPO_MOVIMENTACAO_CHOICES, verbose_name="Tipo de Movimentação")
+    data_efetiva = models.DateField(verbose_name="Data Efetiva da Movimentação")
+    justificativa = models.TextField(verbose_name="Justificativa da Movimentação")
+    # Opcional: Anexos
+    # anexo = models.FileField(upload_to='anexos_mp/', blank=True, null=True, verbose_name="Anexo (Opcional)")
+
+    # --- Controle de Aprovação ---
+    status = models.CharField(max_length=30, choices=STATUS_MP_CHOICES, verbose_name="Status da Movimentação")
+    aprovador_atual = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='mps_para_aprovar', verbose_name="Próximo Aprovador")
+    observacao_rejeicao = models.TextField(blank=True, null=True, help_text="Motivo da rejeição.")
+
+    # --- Histórico ---
+    aprovado_por_gestor_proposto = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_gestor_proposto = models.DateTimeField(null=True, blank=True)
+    aprovado_por_gestor_atual = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_gestor_atual = models.DateTimeField(null=True, blank=True)
+    aprovado_por_rh = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_rh = models.DateTimeField(null=True, blank=True)
+    rejeitado_por = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_rejeicao = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"MP #{self.id}: {self.funcionario_movido.nome} para {self.cargo_proposto.nome}"
+
+    # --- Funções Auxiliares (Novas/Ajustadas) ---
+    def _get_gestor_setor(self, setor):
+        """ Tenta encontrar o Gestor (Nível 2) ou Coordenador (Nível 3) de um setor. """
+        if not setor:
+            return None
+        try:
+            # Procura Gestor ou Coordenador ATIVO no setor especificado
+            gestor = Funcionario.objects.filter(
+                setor_primario=setor, 
+                cargo__nivel__in=[2, 3], # Nível 2 ou 3
+                ativo=True
+            ).order_by('cargo__nivel').first() # Prefere Gestor (Nível 2)
+            return gestor
+        except Funcionario.DoesNotExist:
+            return None
+            
+    # Reutiliza a função get_rh_approver que já existe em RequisicaoPessoal
+    # (Poderíamos movê-la para um local comum ou duplicá-la aqui se preferir)
+    def _get_rh_approver(self):
+        """ Encontra o aprovador do RH (Copiado/Adaptado de RequisicaoPessoal). """
+        rh_sector_names = ["RECURSOS HUMANOS", "DEPARTAMENTO DE PESSOAL"]
+        q_objects = Q()
+        for name in rh_sector_names:
+            q_objects |= Q(setor_primario__nome__iexact=name)
+        try:
+            rh_approver = Funcionario.objects.filter(q_objects, ativo=True).order_by('cargo__nivel').first()
+            if rh_approver: return rh_approver
+            # Fallback Diretor
+            return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
+        except Exception:
+            # Fallback Diretor
+            return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
+
+
+    # --- Lógica de Workflow ---
+    def set_initial_approver(self):
+        """ Define o status e o aprovador inicial (Gestor Proposto). """
+        # Preenche os dados atuais (opcional, pode ser feito na view)
+        self.cargo_atual = self.funcionario_movido.cargo
+        self.setor_atual = self.funcionario_movido.setor_primario
+        # self.salario_atual = ... (precisa buscar o salário atual do funcionário)
+
+        # Encontra o gestor do SETOR PROPOSTO
+        gestor_proposto = self._get_gestor_setor(self.setor_proposto)
+        
+        if gestor_proposto:
+            self.aprovador_atual = gestor_proposto
+            self.status = 'pendente_gestor_proposto'
+        else:
+            # Se não encontrar gestor proposto (setor sem gestor?), pula para o Gestor Atual? Ou RH?
+            # Vamos pular para o Gestor Atual por segurança.
+            gestor_atual = self._get_gestor_setor(self.setor_atual)
+            if gestor_atual:
+                 self.aprovador_atual = gestor_atual
+                 self.status = 'pendente_gestor_atual'
+            else:
+                 # Se nenhum gestor for encontrado, vai para o RH
+                 self.aprovador_atual = self._get_rh_approver()
+                 self.status = 'pendente_rh'
+
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        if is_new and not self.status: # Define SÓ se for novo e o status não estiver definido
+            self.set_initial_approver()
+        super().save(*args, **kwargs)
+
+    def avancar_aprovacao(self, aprovador_que_aprovou):
+        """ Move a MP para o próximo estágio de aprovação. """
+        now = timezone.now()
+        proximo_aprovador = None
+        proximo_status = None
+
+        # Fluxo: Gestor Proposto -> Gestor Atual -> RH -> Aprovada
+        
+        # 1. Gestor Proposto aprovou
+        if self.status == 'pendente_gestor_proposto':
+            self.aprovado_por_gestor_proposto = aprovador_que_aprovou
+            self.data_aprovacao_gestor_proposto = now
+            # Próximo: Gestor Atual
+            proximo_aprovador = self._get_gestor_setor(self.setor_atual)
+            proximo_status = 'pendente_gestor_atual'
+            # Se não encontrar gestor atual, pula pro RH
+            if not proximo_aprovador:
+                 proximo_aprovador = self._get_rh_approver()
+                 proximo_status = 'pendente_rh'
+
+        # 2. Gestor Atual aprovou
+        elif self.status == 'pendente_gestor_atual':
+            self.aprovado_por_gestor_atual = aprovador_que_aprovou
+            self.data_aprovacao_gestor_atual = now
+            # Próximo: RH
+            proximo_aprovador = self._get_rh_approver()
+            proximo_status = 'pendente_rh'
+
+        # 3. RH aprovou
+        elif self.status == 'pendente_rh':
+            self.aprovado_por_rh = aprovador_que_aprovou
+            self.data_aprovacao_rh = now
+            # Próximo: Fim (Aprovada)
+            proximo_aprovador = None
+            proximo_status = 'aprovada'
+            
+        # Atualiza o status e o próximo aprovador (se houver)
+        if proximo_status:
+            self.status = proximo_status
+            self.aprovador_atual = proximo_aprovador
+            self.save()
+        else:
+             # Se algo deu errado (ex: status inválido), não faz nada ou loga um erro
+             pass
+
+    def rejeitar(self, aprovador_que_rejeitou, observacao):
+        """ Marca a MP como rejeitada. """
+        self.status = 'rejeitada'
+        self.rejeitado_por = aprovador_que_rejeitou
+        self.data_rejeicao = timezone.now()
+        self.observacao_rejeicao = observacao
+        self.aprovador_atual = None
+        self.save()
+
+    class Meta:
+        verbose_name = "Movimentação Pessoal"
+        verbose_name_plural = "Movimentações Pessoais"
+        ordering = ['-criado_em']
