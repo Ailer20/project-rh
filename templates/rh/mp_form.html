@@ -114,7 +114,7 @@
                     {% if form.data_efetiva.help_text %}<small class="helptext">{{ form.data_efetiva.help_text }}</small>{% endif %}
                     {% if form.data_efetiva.errors %}<div class="errorlist">{{ form.data_efetiva.errors }}</div>{% endif %}
                 </div>
-                
+
                 {# Espaço vazio na grid, apenas para alinhar #}
                 <div class="form-field-group"></div>
 
@@ -148,79 +148,78 @@
 {% endblock content %}
 
 {% block extra_js %}
-    {# Inclui jQuery e Select2 JS do base.html #}
+    {# 1. Carrega o jQuery (do base.html) #}
     {{ block.super }}
 
-    {# Script específico para ESTA página #}
+    {# 2. Carrega o Select2 JS (DEPOIS do jQuery) #}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    {# 3. Script da página (Executa DEPOIS de ambos) #}
     <script>
         $(document).ready(function() {
+            console.log("Script mp_form.html iniciado (versão com includes locais revisada)");
+
             // --- Inicializa o Select2 ---
-            // Aplica a todos os selects do formulário
-            $('.form-grid select').select2({
-                width: '100%',
-                placeholder: "Selecione...", // Placeholder padrão
-                 allowClear: true // Permite limpar a seleção (opcional)
-            });
+            var $selects = $('.form-grid select');
+            if ($selects.length > 0) {
+                if ($.fn.select2) {
+                    console.log("Inicializando Select2 para", $selects.length, "select(s)");
+                    try {
+                        $selects.select2({
+                            width: '100%',
+                            placeholder: "Selecione...",
+                            allowClear: true
+                        });
+                        console.log("Select2 inicializado com sucesso.");
+                    } catch (e) {
+                        console.error("Erro ao inicializar Select2:", e);
+                    }
+                } else {
+                    console.error("Erro: Função $.fn.select2 não encontrada! O Select2 JS não carregou corretamente?");
+                }
+            } else {
+                 console.log("Nenhum elemento select encontrado em .form-grid para inicializar o Select2");
+            }
 
             // --- Opcional: Lógica para buscar e mostrar dados atuais do funcionário ---
-            const funcionarioSelect = $('#id_funcionario_movido'); // ID padrão do Django
+            const funcionarioSelect = $('#id_funcionario_movido');
             const infoDiv = $('#current-funcionario-info');
             const cargoSpan = $('#current-cargo');
             const setorSpan = $('#current-setor');
             // const salarioSpan = $('#current-salario');
 
+             if (funcionarioSelect.length === 0) {
+                console.error("Não foi possível encontrar o elemento select #id_funcionario_movido!");
+             }
+             if (infoDiv.length === 0) {
+                 console.error("Não foi possível encontrar o elemento div #current-funcionario-info!");
+             }
+
+
             funcionarioSelect.on('change', function() {
                 const funcionarioId = $(this).val();
+                console.log("Funcionário selecionado:", funcionarioId); // Log
                 if (funcionarioId) {
-                    // --- Fazer uma requisição AJAX para buscar os dados ---
-                    // Isso requer uma view/URL separada para retornar os dados em JSON
-                    // Exemplo simplificado (sem AJAX real):
-                    
-                    // Supondo que você passou os dados dos funcionários para o template 
-                    // (não recomendado para muitos funcionários):
-                    // var funcionarioData = {
-                    //    '1': { cargo: 'Analista Pleno', setor: 'TI', salario: '5000.00' },
-                    //    '2': { cargo: 'Auxiliar ADM', setor: 'Financeiro', salario: '2500.00' },
-                    // };
-                    // if (funcionarioData[funcionarioId]) {
-                    //    cargoSpan.text(funcionarioData[funcionarioId].cargo);
-                    //    setorSpan.text(funcionarioData[funcionarioId].setor);
-                    //    // salarioSpan.text(funcionarioData[funcionarioId].salario);
-                    //    infoDiv.show();
-                    // } else {
-                    //    infoDiv.hide();
-                    // }
-                    
-                    // --- OU --- 
-                    // A melhor forma é usar AJAX para buscar dados do funcionário
-                    // Exemplo (requer uma view e URL '/api/funcionario/<int:pk>/details/'):
-                    /*
-                    $.ajax({
-                        url: `/api/funcionario/${funcionarioId}/details/`, 
-                        method: 'GET',
-                        success: function(data) {
-                            if (data) {
-                                cargoSpan.text(data.cargo_nome || 'N/A');
-                                setorSpan.text(data.setor_nome || 'N/A');
-                                // salarioSpan.text(data.salario || 'N/A'); 
-                                infoDiv.show();
-                            } else {
-                                infoDiv.hide();
-                            }
-                        },
-                        error: function() {
-                            console.error('Erro ao buscar dados do funcionário.');
-                            infoDiv.hide();
-                        }
-                    });
-                    */
-                   // Por enquanto, vamos deixar escondido
-                   infoDiv.hide(); 
+                    // --- PLACEHOLDER PARA LÓGICA AJAX ---
+                    // $.ajax({ url: `/api/funcionario/${funcionarioId}/details/`, ... });
+                    console.log("ID selecionado, mas AJAX está desativado. Escondendo infoDiv.");
+                    infoDiv.hide();
+                    // --- FIM PLACEHOLDER ---
 
                 } else {
+                    console.log("Nenhum funcionário selecionado. Escondendo infoDiv.");
                     infoDiv.hide(); // Esconde se nenhum funcionário for selecionado
                 }
             });
+
+            // Garante que o div de info esteja escondido no carregamento inicial se nada estiver selecionado
+            if (!funcionarioSelect.val()) {
+                infoDiv.hide();
+            } else {
+                // Se houver valor inicial, poderia disparar o change para buscar dados
+                // funcionarioSelect.trigger('change');
+            }
+             console.log("Configuração do script mp_form.html finalizada");
         });
     </script>
 {% endblock extra_js %}

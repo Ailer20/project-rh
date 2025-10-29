@@ -970,12 +970,62 @@ class MovimentacaoPessoalCreateView(Nivel5RequiredMixin, CreateView): # ADMs e s
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Opcional: Filtrar queryset de 'funcionario_movido' para mostrar apenas ativos?
-        form.fields['funcionario_movido'].queryset = Funcionario.objects.filter(ativo=True).order_by('nome')
+        user_func = self.funcionario_logado # Vem do BasePermissionMixin
+        
+        # Se não houver funcionário logado (ex: Superusuário sem perfil), não faz nada
+        if not user_func or not user_func.cargo:
+            return form
+
+        user_nivel = user_func.cargo.nivel
+
+        # --- Define o queryset base para 'funcionario_movido' ---
+        funcionario_queryset = Funcionario.objects.none() # Começa vazio
+
+        if user_nivel == 1 or self.request.user.is_superuser:
+            # Nível 1 (Diretor) ou Superuser: Vê TODOS os funcionários ativos
+            funcionario_queryset = Funcionario.objects.filter(ativo=True)
+        
+        elif user_nivel <= 4: 
+            # Nível 2 (Gestor), 3 (Coordenador), 4 (Supervisor):
+            # Vê funcionários do seu setor primário E dos setores pelos quais é responsável.
+            
+            # Constrói um filtro Q para os setores
+            allowed_sectors_q = Q()
+            
+            # 1. Adiciona setor primário
+            if user_func.setor_primario:
+                allowed_sectors_q |= Q(setor_primario=user_func.setor_primario)
+                
+            # 2. Adiciona setores responsáveis
+            setores_responsaveis = user_func.setores_responsaveis.all()
+            if setores_responsaveis.exists():
+                allowed_sectors_q |= Q(setor_primario__in=setores_responsaveis)
+                
+            if allowed_sectors_q:
+                # Filtra por setores permitidos E que estejam ativos
+                funcionario_queryset = Funcionario.objects.filter(allowed_sectors_q, ativo=True).distinct()
+            else:
+                # Se não tem setor primário nem é responsável, mostra apenas a si mesmo
+                funcionario_queryset = Funcionario.objects.filter(pk=user_func.pk, ativo=True)
+
+        else: 
+            # Nível 5 (ADM) e outros:
+            # Vê APENAS funcionários do seu próprio setor primário (como você pediu).
+            if user_func.setor_primario:
+                funcionario_queryset = Funcionario.objects.filter(
+                    setor_primario=user_func.setor_primario,
+                    ativo=True
+                )
+            # Se Nível 5 não tiver setor, o queryset continua .none() (correto)
+
+        # Aplica o queryset filtrado ao campo do formulário, excluindo o próprio usuário
+        form.fields['funcionario_movido'].queryset = funcionario_queryset.exclude(pk=user_func.pk).order_by('nome')
+        
+        # --- Outros campos (manter como estava) ---
         form.fields['cargo_proposto'].queryset = Cargo.objects.order_by('nivel', 'nome')
         form.fields['setor_proposto'].queryset = Setor.objects.order_by('nome')
-        # Aplica widget de data
         form.fields['data_efetiva'].widget = forms.DateInput(attrs={'type': 'date'})
+        
         return form
 
     def get_context_data(self, **kwargs):
@@ -995,7 +1045,6 @@ class MovimentacaoPessoalCreateView(Nivel5RequiredMixin, CreateView): # ADMs e s
             # form.instance.salario_atual = ... # Adicionar busca do salário atual
         
         # A lógica de 'set_initial_approver' está no método save() do model
-        messages.success(self.request, "Solicitação de Movimentação aberta e enviada para aprovação.")
         return super().form_valid(form)
 
 # --- View para Listar Minhas MPs ---
@@ -1076,11 +1125,20 @@ def aprovar_mp_view(request, pk):
 
     if mp.status == 'aprovada':
         messages.success(request, f"Movimentação Pessoal #{mp.id} APROVADA com sucesso!")
-        # AQUI: Adicionar lógica para efetivar a movimentação (mudar cargo/setor/salário do funcionário_movido)
-        # Ex: mp.funcionario_movido.cargo = mp.cargo_proposto
-        #     mp.funcionario_movido.setor_primario = mp.setor_proposto
-        #     mp.funcionario_movido.save()
-        #     Notificar envolvidos?
+
+        # --- IMPLEMENTAR AQUI ---
+        try:
+            funcionario = mp.funcionario_movido
+            funcionario.cargo = mp.cargo_proposto
+            funcionario.setor_primario = mp.setor_proposto
+            # funcionario.salario = mp.salario_proposto # Se você tiver um campo de salário no Funcionario
+            funcionario.save()
+            messages.info(request, f"Dados do funcionário {funcionario.nome} atualizados.")
+            # Considerar notificar o funcionário, gestores, etc.
+        except Exception as e:
+            messages.error(request, f"Erro ao tentar efetivar a movimentação do funcionário: {e}")
+            # Considerar reverter o status da MP ou logar o erro criticamente
+        # --- FIM DA IMPLEMENTAÇÃO ---
     else:
         messages.info(request, f"Movimentação Pessoal #{mp.id} encaminhada para {mp.aprovador_atual.nome}.")
         # Notificar próximo aprovador?
