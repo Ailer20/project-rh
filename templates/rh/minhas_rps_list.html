@@ -4,25 +4,13 @@
 {% block title %}Minhas Requisições Pessoais{% endblock title %}
 
 {% block extra_css %}
-    <style>
-        .header-actions { margin-bottom: 20px; text-align: right; }
-        .btn-add { background: linear-gradient(45deg, #4a00e0, #8e2de2); color: white; border: none; padding: 10px 15px; border-radius: 5px; text-decoration: none; }
-        .btn-add:hover { opacity: 0.9; }
-        .btn-detail { background-color: #17a2b8; color: white; padding: 5px 10px; font-size: 0.9em; text-decoration: none; border-radius: 5px; }
-        .btn-detail:hover { background-color: #138496; }
-
-        /* Badges de Status da RP */
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; }
-        .status-pendente_nivel_4, .status-pendente_nivel_3, .status-pendente_nivel_2, .status-pendente_nivel_1 { background-color: #ffc107; color: #333; } /* Amarelo para pendente */
-        .status-aprovada { background-color: #28a745; color: white; } /* Verde para aprovada */
-        .status-rejeitada { background-color: #dc3545; color: white; } /* Vermelho para rejeitada */
-        .status-cancelada { background-color: #6c757d; color: white; } /* Cinza para cancelada */
-    </style>
+    <link rel="stylesheet" href="{% static 'css/rh/minhas_rps_list.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
 <div class="minhas-rps-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    
+    <div class="page-header">
         <h1>Minhas Requisições Pessoais</h1>
         <a href="{% url 'criar_rp' %}" class="btn-add"><i class="fas fa-plus"></i> Abrir Nova RP</a>
     </div>
@@ -63,24 +51,17 @@
                             {% if rp.aprovador_atual %}
                                 {{ rp.aprovador_atual.nome }}
                             {% elif rp.status == 'aprovada' %}
-                                <span style="color: #28a745;">Concluído</span>
+                                <span class="status-aprovada" style="font-weight: 600;">Concluído</span>
                             {% elif rp.status == 'rejeitada' %}
-                                <span style="color: #dc3545;">Rejeitado</span>
+                                <span class="status-rejeitada" style="font-weight: 600;">Rejeitado</span>
                             {% elif rp.status == 'cancelada' %}
-                                <span style="color: #6c757d;">Cancelado</span>
+                                <span class="status-cancelada" style="font-weight: 600;">Cancelado</span>
                             {% else %}
                                 -
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'detalhar_rp' rp.pk %}" class="btn-detail"><i class="fas fa-eye"></i> Detalhes</a>
-                            {# Adicionar botão de cancelar se a lógica permitir #}
-                            {# {% if rp.status.startswith('pendente') %} #}
-                            {# <form action="{% url 'cancelar_rp' rp.pk %}" method="post" style="display: inline;"> #}
-                            {#     {% csrf_token %} #}
-                            {#     <button type="submit" class="btn-cancel" onclick="return confirm('Tem certeza?');">Cancelar</button> #}
-                            {# </form> #}
-                            {# {% endif %} #}
+                            <a href="{% url 'detalhar_rp' rp.pk %}" class="btn-action-detail"><i class="fas fa-eye"></i> Detalhes</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -88,7 +69,10 @@
             </table>
         </div>
     {% else %}
-        <p class="no-results">Você ainda não abriu nenhuma Requisição Pessoal.</p>
+        <div class="no-results">
+            <h4>Nenhuma Requisição Encontrada</h4>
+            <p>Você ainda não abriu nenhuma Requisição Pessoal.</p>
+        </div>
     {% endif %}
 
 </div>

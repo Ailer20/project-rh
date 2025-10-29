@@ -300,7 +300,6 @@ class Vaga(models.Model):
         verbose_name_plural = "Vagas"
 
 
-# Modelo RequisicaoPessoal ATUALIZADO com campos do PDF
 # Modelo RequisicaoPessoal ATUALIZADO com fluxo Gestor -> RH
 class RequisicaoPessoal(models.Model):
     # --- 1. STATUS ATUALIZADOS PARA O NOVO FLUXO ---

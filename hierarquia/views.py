@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from datetime import datetime
 from django.contrib.auth.models import User, Permission 
 # Adicione esta linha inteira
+from django import forms
 from django.contrib.contenttypes.models import ContentType
 
 def login_view(request):
@@ -564,11 +565,6 @@ class VagaCreateView(RHDPRequiredMixin, CreateView):
     ]
     success_url = reverse_lazy('listar_vagas')
 
-    def form_valid(self, form):
-        form.instance.criado_por = self.funcionario_logado # Usa o funcionário do Mixin
-        messages.success(self.request, f"Vaga '{form.instance.titulo}' criada com sucesso.")
-        return super().form_valid(form)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['titulo_pagina'] = "Criar Nova Vaga"
@@ -753,30 +749,63 @@ class RequisicaoPessoalRHUpdateView(RHDPRequiredMixin, UpdateView):
     View exclusiva para o RH editar uma RP e APROVAR ou DEVOLVER ao Gestor.
     """
     model = RequisicaoPessoal
-    template_name = 'rh/rp_form_rh_edit.html' # --- CRIE ESTE NOVO TEMPLATE ---
-    context_object_name = 'rp'
-    # Campos que o RH pode editar:
+    template_name = 'rh/rp_form_rh_edit.html' 
+    context_object_name = 'rp' # No template, use 'object' ou 'rp'
+    
+    # --- ✅ LISTA DE CAMPOS ATUALIZADA ---
+    # Inclui todos os campos da RP que o RH pode querer ajustar
     fields = [
-        # Coloque aqui os campos da Vaga que o RH pode "sobrescrever" na RP
-        # Ex: 'faixa_salarial_inicial', 'faixa_salarial_final', 
-        # E o campo de justificativa da edição:
+        # Detalhes da Requisição (editáveis pelo RH)
+        'tipo_vaga', 
+        'nome_substituido', 
+        'motivo_substituicao',
+        'local_trabalho', 
+        'data_prevista_inicio', 
+        'prazo_contratacao',
+        'horario_trabalho', 
+        'justificativa_rp', # Justificativa ORIGINAL (RH pode ajustar/complementar?)
+
+        # Campo específico do RH para devolver ao gestor
         'justificativa_edicao_rh' 
     ]
-    success_url = reverse_lazy('listar_rps_para_aprovar') # Volta para a lista do RH
+    # ------------------------------------
+    # CAMPOS EXCLUÍDOS INTENCIONALMENTE:
+    # - vaga: Mudar a vaga associada pode quebrar o contexto. Melhor cancelar e criar outra.
+    # - solicitante: Não pode ser alterado.
+    # - criado_em, atualizado_em: Automáticos.
+    # - status, aprovador_atual: Gerenciados pela lógica de aprovação.
+    # - observacao_rejeicao: Usado apenas na rejeição final.
+    # - aprovado_por_*, data_aprovacao_*: Histórico automático.
+    # - rejeitado_por, data_rejeicao: Histórico automático.
+    
+    success_url = reverse_lazy('listar_rps_para_aprovar') 
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Torna a justificativa obrigatória APENAS se for devolver
-        form.fields['justificativa_edicao_rh'].required = False
-        form.fields['justificativa_edicao_rh'].help_text = "Preencha APENAS se for 'Editar e Devolver'."
+        # Ajusta o campo de justificativa da edição
+        just_field = form.fields.get('justificativa_edicao_rh')
+        if just_field:
+            just_field.required = False # Não é obrigatório se for aprovar direto
+            just_field.widget.attrs.update({'rows': 3}) # Menor que a justificativa principal
+            just_field.help_text = "Preencha APENAS se for 'Salvar e Devolver ao Gestor'."
+        
+        # Opcional: Ajustar widgets de outros campos se necessário
+        # Ex: Tornar datas DateInput
+        date_fields = ['data_prevista_inicio', 'prazo_contratacao']
+        for field_name in date_fields:
+            if field_name in form.fields:
+                 form.fields[field_name].widget = forms.DateInput(attrs={'type': 'date'})
+
         return form
 
+    # (O resto da view test_func, post continua igual...)
     def test_func(self):
         # Garante que é do RH e que a RP está pendente no RH
         if not super().test_func():
             return False
-        rp = self.get_object()
-        return rp.status == 'pendente_rh'
+        # Correção: A instância é self.get_object(), não rp
+        rp_instance = self.get_object() 
+        return rp_instance.status == 'pendente_rh'
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -788,6 +817,14 @@ class RequisicaoPessoalRHUpdateView(RHDPRequiredMixin, UpdateView):
 
         if 'aprovar' in request.POST:
             # --- Se o RH clicar em "APROVAR" ---
+            # Primeiro, salva quaisquer edições feitas no formulário
+            if form.is_valid():
+                form.save()
+            else:
+                 # Se houver erro de validação ao tentar aprovar direto, mostra o erro
+                 return self.form_invalid(form) 
+            
+            # Então, avança a aprovação
             self.object.avancar_aprovacao(aprovador_que_aprovou=self.funcionario_logado)
             messages.success(request, f"Requisição Pessoal #{self.object.id} APROVADA com sucesso.")
             return redirect(self.get_success_url())
@@ -803,7 +840,7 @@ class RequisicaoPessoalRHUpdateView(RHDPRequiredMixin, UpdateView):
                 # Salva as mudanças feitas no formulário
                 form.save() 
                 
-                # Chama a nova função do modelo
+                # Chama a função do modelo para devolver
                 self.object.devolver_para_gestor(
                     rh_editor=self.funcionario_logado,
                     justificativa=justificativa
@@ -813,4 +850,62 @@ class RequisicaoPessoalRHUpdateView(RHDPRequiredMixin, UpdateView):
             else:
                 return self.form_invalid(form)
         
+        # Se nenhum botão foi clicado (improvável com POST), volta para o detalhe
         return redirect('detalhar_rp', pk=self.object.pk)
+
+
+class HistoricoRPListView(BasePermissionMixin, ListView):
+    """
+    Mostra um histórico de RPs concluídas ('aprovada' ou 'rejeitada')
+    com base no perfil do usuário logado.
+    """
+    model = RequisicaoPessoal
+    template_name = 'rh/historico_rps_list.html' # <- Vamos criar este template
+    context_object_name = 'requisicoes'
+    paginate_by = 20 # Opcional: para paginar a lista
+
+    def get_queryset(self):
+        user_func = self.funcionario_logado
+        user_nivel = user_func.cargo.nivel
+        
+        # 1. Define a base de RPs: apenas as finalizadas
+        finished_qs = RequisicaoPessoal.objects.filter(
+            status__in=['aprovada', 'rejeitada']
+        )
+
+        # 2. Verifica se o usuário é do RH/DP
+        is_rh_dp = False
+        if user_func.setor_primario:
+            # Use .upper() para ser case-insensitive
+            rh_dp_setores = ['RECURSOS HUMANOS', 'DEPARTAMENTO DE PESSOAL']
+            if user_func.setor_primario.nome.upper() in rh_dp_setores:
+                 is_rh_dp = True
+
+        # 3. Aplica a lógica de filtro
+        
+        # REGRA DO RH/DP e DIRETOR (Nível 1): Vêem TUDO
+        if is_rh_dp or user_nivel == 1:
+            return finished_qs.order_by('-criado_em')
+        
+        # REGRA DO GESTOR/COORDENADOR (Níveis 2 e 3): Vêem o que eles APROVARAM ou REJEITARAM
+        if user_nivel == 2 or user_nivel == 3:
+            return finished_qs.filter(
+                # Filtra RPs onde o usuário logado está no campo 'aprovado_por_gestor'
+                # OU no campo 'rejeitado_por'
+                Q(aprovado_por_gestor=user_func) | Q(rejeitado_por=user_func)
+            ).distinct().order_by('-criado_em')
+
+        # REGRA DO SUPERVISOR/ADM (Níveis 4 e 5): Vêem o que eles CRIARAM
+        if user_nivel == 4 or user_nivel == 5:
+            return finished_qs.filter(
+                solicitante=user_func
+            ).order_by('-criado_em')
+        
+        # Fallback: Se não for nenhum dos acima, não mostra nada
+        return RequisicaoPessoal.objects.none()
+            
+    def get_context_data(self, **kwargs):
+        # Adiciona um título para a página
+        context = super().get_context_data(**kwargs)
+        context['titulo_pagina'] = "Histórico de Requisições Pessoais"
+        return context

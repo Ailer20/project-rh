@@ -4,27 +4,7 @@
 {% block title %}Vagas Abertas{% endblock title %}
 
 {% block extra_css %}
-    {# Se precisar de CSS específico para esta tabela/lista, crie um arquivo vaga_list.css #}
-    {# <link rel="stylesheet" href="{% static 'css/vaga_list.css' %}"> #}
-    <style>
-        /* Estilos rápidos para a tabela (podem ir para um CSS separado) */
-        .action-buttons a, .action-buttons button {
-            margin-right: 5px;
-            padding: 5px 10px;
-            font-size: 0.9em;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .btn-edit { background-color: #007bff; color: white; border: none; }
-        .btn-edit:hover { background-color: #0056b3; }
-        .btn-add { background: linear-gradient(45deg, #4a00e0, #8e2de2); color: white; border: none; } /* Botão de Adicionar */
-        .btn-add:hover { opacity: 0.9; }
-        .header-actions { margin-bottom: 20px; text-align: right; }
-        .status-aberta { background-color: #28a745; color: white; }
-        .status-em_processo { background-color: #17a2b8; color: white; }
-        .status-congelada { background-color: #ffc107; color: #333; }
-        .status-fechada { background-color: #6c757d; color: white; }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/rh/vaga_list.css' %}">
 {% endblock extra_css %}
 
 {% block content %}

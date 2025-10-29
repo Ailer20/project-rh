@@ -4,101 +4,13 @@
 {% block title %}Detalhes da Requisição Pessoal #{{ rp.id }}{% endblock title %}
 
 {% block extra_css %}
-    <style>
-        .detail-card {
-            max-width: 900px;
-            margin: 0 auto 30px auto; /* Centraliza e adiciona espaço abaixo */
-        }
-        .detail-section {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px dashed #e0e0e0;
-        }
-        body.dark-theme .detail-section {
-            border-bottom-color: #2a2a4a;
-        }
-        .detail-section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        .detail-section h3 {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #8e2de2; /* Roxo */
-            margin-bottom: 15px;
-        }
-        .detail-item {
-            display: flex;
-            margin-bottom: 10px;
-            font-size: 0.95em;
-        }
-        .detail-item strong {
-            color: #081E26; /* Cor principal no tema claro */
-            width: 200px; /* Alinha os labels */
-            flex-shrink: 0;
-            margin-right: 10px;
-        }
-        body.dark-theme .detail-item strong {
-            color: #e0e0e0;
-        }
-        .detail-item span {
-            color: #737373; /* Cor secundária */
-        }
-        body.dark-theme .detail-item span {
-            color: #a0a0b0;
-        }
-
-        /* Estilos para Aprovação/Rejeição */
-        .approval-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-        }
-        body.dark-theme .approval-section {
-            border-top-color: #2a2a4a;
-        }
-        .approval-actions {
-            display: flex;
-            justify-content: flex-end; /* Alinha botões à direita */
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .btn-approve { background: #28a745; } /* Verde */
-        .btn-reject { background: #dc3545; } /* Vermelho */
-        .btn-edit-rh { background: #007bff; } /* Azul */
-        .btn-approve:hover { background: #218838; }
-        .btn-reject:hover { background: #c82333; }
-        .btn-edit-rh:hover { background: #0069d9; }
-
-        /* --- ✅ MUDANÇA 1: Classes de Status CSS Atualizadas --- */
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; margin-left: 10px; }
-        .status-pendente_gestor, .status-pendente_rh { background-color: #ffc107; color: #333; }
-        .status-em_revisao_gestor { background-color: #fd7e14; color: white; } /* Laranja para revisão */
-        .status-aprovada { background-color: #28a745; color: white; }
-        .status-rejeitada { background-color: #dc3545; color: white; }
-        .status-cancelada { background-color: #6c757d; color: white; }
-
-        /* Alerta de Revisão */
-        .alert-revisao-rh {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        body.dark-theme .alert-revisao-rh {
-            background-color: #493f22;
-            border-color: #6d5f34;
-            color: #ffeeba;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/rh/rp_detail.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
 <div class="rp-detail-container">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    
+    <div class="page-header">
         <h1>Detalhes da Requisição Pessoal #{{ rp.id }}</h1>
         <span class="status-badge status-{{ rp.status }}">{{ rp.get_status_display }}</span>
     </div>
@@ -128,7 +40,7 @@
             <div class="detail-item"><strong>Nome Substituído:</strong> <span>{{ rp.nome_substituido|default:"Não informado" }}</span></div>
             <div class="detail-item"><strong>Motivo Substituição:</strong> <span>{{ rp.get_motivo_substituicao_display|default:"Não informado" }}</span></div>
             {% endif %}
-            <div class="detail-item"><strong>Justificativa:</strong> <span>{{ rp.justificativa_rp|linebreaksbr|default:"Nenhuma" }}</span></div>
+            <div class="detail-item"><strong>Justificativa:</strong> <span class="pre-line">{{ rp.justificativa_rp|default:"Nenhuma" }}</span></div>
             <div class="detail-item"><strong>Local Trabalho:</strong> <span>{{ rp.local_trabalho|default:"Não informado" }}</span></div>
             <div class="detail-item"><strong>Data Prevista Início:</strong> <span>{{ rp.data_prevista_inicio|date:"d/m/Y"|default:"Não informada" }}</span></div>
             <div class="detail-item"><strong>Prazo Contratação:</strong> <span>{{ rp.prazo_contratacao|date:"d/m/Y"|default:"Não informado" }}</span></div>
@@ -143,12 +55,12 @@
             <div class="detail-item"><strong>Tipo Contratação:</strong> <span>{{ rp.vaga.get_tipo_contratacao_display }}</span></div>
             <div class="detail-item"><strong>Faixa Salarial:</strong> <span>R$ {{ rp.vaga.faixa_salarial_inicial|default:"N/A" }} - R$ {{ rp.vaga.faixa_salarial_final|default:"N/A" }}</span></div>
             <div class="detail-item"><strong>Centro de Custo:</strong> <span>{{ rp.vaga.centro_custo|default:"N/A" }}</span></div>
-            <div class="detail-item"><strong>Formação Acadêmica:</strong> <span>{{ rp.vaga.formacao_academica|linebreaksbr|default:"N/A" }}</span></div>
-            <div class="detail-item"><strong>Benefícios:</strong> <span>{{ rp.vaga.beneficios|linebreaksbr|default:"N/A" }}</span></div>
-            <div class="detail-item"><strong>Competências Técnicas:</strong> <span>{{ rp.vaga.requisitos_tecnicos|linebreaksbr|default:"N/A" }}</span></div>
-            <div class="detail-item"><strong>Competências Comport.:</strong> <span>{{ rp.vaga.requisitos_comportamentais|linebreaksbr|default:"N/A" }}</span></div>
-            <div class="detail-item"><strong>Principais Atividades:</strong> <span>{{ rp.vaga.principais_atividades|linebreaksbr|default:"N/A" }}</span></div>
-            <div class="detail-item"><strong>Justificativa (Vaga):</strong> <span>{{ rp.vaga.justificativa|linebreaksbr|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Formação Acadêmica:</strong> <span class="pre-line">{{ rp.vaga.formacao_academica|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Benefícios:</strong> <span class="pre-line">{{ rp.vaga.beneficios|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Competências Técnicas:</strong> <span class="pre-line">{{ rp.vaga.requisitos_tecnicos|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Competências Comport.:</strong> <span class="pre-line">{{ rp.vaga.requisitos_comportamentais|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Principais Atividades:</strong> <span class="pre-line">{{ rp.vaga.principais_atividades|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Justificativa (Vaga):</strong> <span class="pre-line">{{ rp.vaga.justificativa|default:"N/A" }}</span></div>
             <div class="detail-item"><strong>Vaga Criada por:</strong> <span>{{ rp.vaga.criado_por.nome|default:"-" }} em {{ rp.vaga.criado_em|date:"d/m/Y" }}</span></div>
         </div>
 
@@ -158,7 +70,7 @@
             
             {% if rp.status == 'rejeitada' %}
                 <div class="detail-item"><strong>Rejeitado Por:</strong> <span>{{ rp.rejeitado_por.nome|default:"-" }} em {{ rp.data_rejeicao|date:"d/m/Y H:i"|default:"-" }}</span></div>
-                <div class="detail-item"><strong>Observação:</strong> <span style="color: #dc3545;">{{ rp.observacao_rejeicao|default:"-" }}</span></div>
+                <div class="detail-item"><strong>Observação:</strong> <span class="pre-line" style="color: #dc3545;">{{ rp.observacao_rejeicao|default:"-" }}</span></div>
             
             {% elif rp.aprovador_atual %}
                 <div class="detail-item"><strong>Aguardando Aprovação de:</strong> <span>{{ rp.aprovador_atual.nome }}</span></div>
@@ -186,9 +98,8 @@
                         <textarea name="observacao" id="observacao_rh" rows="3" placeholder="Informe o motivo da rejeição..."></textarea>
                     </div>
                     <div class="approval-actions">
-                        <a href="{% url 'editar_rp_rh' rp.pk %}" class="btn-edit-rh"><i class="fas fa-edit"></i> Analisar / Editar</a>
-                        
-                        <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
+                        <a href="{% url 'editar_rp_rh' rp.pk %}" class="btn btn-edit-rh"><i class="fas fa-edit"></i> Analisar / Editar</a>
+                        <button type="submit" class="btn btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
                     </div>
                 </form>
 
@@ -205,11 +116,11 @@
 
                 <form method="post" action="{% url 'aprovar_rp' rp.pk %}" id="form-aprovar">
                     {% csrf_token %}
-                    </form>
+                </form>
 
                 <div class="approval-actions">
-                    <button type="submit" form="form-aprovar" class="btn-approve"><i class="fas fa-check"></i> Aprovar e Encaminhar ao RH</button>
-                    <button type="submit" form="form-rejeitar" class="btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
+                    <button type="submit" form="form-aprovar" class="btn btn-approve"><i class="fas fa-check"></i> Aprovar e Encaminhar ao RH</button>
+                    <button type="submit" form="form-rejeitar" class="btn btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
                 </div>
 
             {% endif %}
@@ -220,9 +131,9 @@
 
     <div style="text-align: center; margin-top: 20px;">
         {% if pode_aprovar_rejeitar %}
-            <a href="{% url 'listar_rps_para_aprovar' %}" class="btn-cancel">Voltar para Lista</a>
+            <a href="{% url 'listar_rps_para_aprovar' %}" class="btn btn-cancel">Voltar para Lista</a>
         {% else %}
-             <a href="{% url 'minhas_rps' %}" class="btn-cancel">Voltar para Minhas RPs</a>
+             <a href="{% url 'minhas_rps' %}" class="btn btn-cancel">Voltar para Minhas RPs</a>
         {% endif %}
     </div>
 

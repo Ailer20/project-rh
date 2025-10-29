@@ -4,64 +4,77 @@
 {% block title %}{{ titulo_pagina|default:"Formulário de Vaga" }}{% endblock title %}
 
 {% block extra_css %}
-    {# Se precisar de CSS específico para este formulário #}
+    <link rel="stylesheet" href="{% static 'css/rh/vaga_form.css' %}">
+    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    
     <style>
-        .form-card {
-            max-width: 800px; /* Limita a largura do formulário */
-            margin: 0 auto; /* Centraliza */
+        .select2-container--default .select2-selection--single {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            height: 47px; /* Alinha com a altura dos seus inputs */
+            padding: 8px 0;
+            border-radius: 6px;
         }
-        .form-card form p {
-            margin-bottom: 15px; /* Espaçamento entre os campos gerados pelo as_p */
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-primary);
+            line-height: 28px;
         }
-        .form-card label {
-            margin-bottom: 5px; /* Espaçamento abaixo do label */
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: var(--text-secondary) transparent transparent transparent;
+            margin-top: 4px;
         }
-        .form-actions {
-            margin-top: 25px;
-            text-align: right; /* Alinha o botão à direita */
+        /* Dropdown (lista de opções) */
+        .select2-dropdown {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 10px var(--shadow-color);
         }
-        .form-actions button {
-            margin-left: 10px; /* Espaço entre botões (se houver mais de um) */
+        .select2-search--dropdown .select2-search__field {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
-        .btn-cancel {
-             background: #6c757d; /* Cinza para cancelar */
-             color: white;
-             text-decoration: none;
-             padding: 12px 25px;
-             border-radius: 8px;
-             font-size: 1em;
-             font-weight: 600;
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: var(--bg-sidebar);
+            color: var(--text-sidebar-hover);
         }
-        .btn-cancel:hover {
-            background: #5a6268;
-        }
-
-        /* Ajustes para textarea */
-        textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
     </style>
 {% endblock extra_css %}
 
 {% block content %}
 <div class="vaga-form-container">
-    <h1>{{ titulo_pagina|default:"Formulário de Vaga" }}</h1>
+    
+    <div class="page-header">
+        <h1>{{ titulo_pagina|default:"Formulário de Vaga" }}</h1>
+    </div>
 
     <div class="card form-card">
-        <form method="post" enctype="multipart/form-data"> {# enctype é importante se você adicionar upload de arquivos #}
+        <form method="post">
             {% csrf_token %}
+            {{ form.non_field_errors }}
 
-            {{ form.non_field_errors }} {# Exibe erros gerais do formulário #}
-
-            {# Renderiza os campos do formulário automaticamente #}
-            {# Cada campo será envolvido em <p>, incluindo label e input #}
-            {{ form.as_p }}
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.field.widget.input_type == 'textarea' %}
+                        <div class="form-field-group full-width">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {{ field.errors }}
+                        </div>
+                    {% else %}
+                        <div class="form-field-group">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {{ field.errors }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
 
             <div class="form-actions">
-                <a href="{% url 'listar_vagas' %}" class="btn-cancel">Cancelar</a>
-                <button type="submit">Salvar Vaga</button>
+                <a href="{% url 'listar_vagas' %}" class="btn btn-cancel">Cancelar</a>
+                <button type="submit" class="btn btn-submit">Salvar Vaga</button>
             </div>
         </form>
     </div>

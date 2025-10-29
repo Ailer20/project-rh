@@ -4,24 +4,15 @@
 {% block title %}Requisições para Aprovar{% endblock title %}
 
 {% block extra_css %}
-    <style>
-        /* Reutiliza estilos de badges e botões, mas podemos adicionar específicos se necessário */
-        .btn-approve { background-color: #28a745; color: white; padding: 5px 10px; font-size: 0.9em; text-decoration: none; border-radius: 5px; }
-        .btn-approve:hover { background-color: #218838; }
-
-        /* Badges de Status da RP */
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; }
-        .status-pendente_nivel_4, .status-pendente_nivel_3, .status-pendente_nivel_2, .status-pendente_nivel_1 { background-color: #ffc107; color: #333; } /* Amarelo para pendente */
-        /* Outros status não devem aparecer aqui, mas mantemos para consistência */
-        .status-aprovada { background-color: #28a745; color: white; }
-        .status-rejeitada { background-color: #dc3545; color: white; }
-        .status-cancelada { background-color: #6c757d; color: white; }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/rh/aprovar_rps_list.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
 <div class="aprovar-rps-container">
-    <h1>Requisições Pendentes de Aprovação</h1>
+    
+    <div class="page-header">
+        <h1>Requisições Pendentes de Aprovação</h1>
+    </div>
 
     {% if messages %}
         {% for message in messages %}
@@ -30,7 +21,8 @@
     {% endif %}
 
     {% if requisicoes %}
-        <p style="color: #a0a0b0; margin-bottom: 20px;">Você tem {{ requisicoes|length }} requisição(ões) aguardando sua análise.</p>
+        <p class="text-muted">Você tem {{ requisicoes|length }} requisição(ões) aguardando sua análise.</p>
+        
         <div class="table-responsive">
             <table class="data-table">
                 <thead>
@@ -58,7 +50,9 @@
                             </span>
                         </td>
                         <td>
-                            <a href="{% url 'detalhar_rp' rp.pk %}" class="btn-approve"><i class="fas fa-search-plus"></i> Analisar</a>
+                            <a href="{% url 'detalhar_rp' rp.pk %}" class="btn-action-analisar">
+                                <i class="fas fa-search-plus"></i> Analisar
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -66,7 +60,10 @@
             </table>
         </div>
     {% else %}
-        <p class="no-results">Nenhuma requisição pendente para sua aprovação no momento.</p>
+        <div class="no-results">
+            <h4>Nenhuma requisição pendente</h4>
+            <p>Nenhuma requisição pendente para sua aprovação no momento.</p>
+        </div>
     {% endif %}
 
 </div>

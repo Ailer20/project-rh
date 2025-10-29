@@ -1,0 +1,217 @@
+/* static/css/rh/vaga_list.css */
+
+/* --- Header da Página --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px; /* Aumenta o espaço */
+}
+
+.page-header h1 {
+    font-size: 28px; /* Tamanho maior */
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* --- Botão Principal de Ação --- */
+.btn-add {
+    background-color: var(--bg-sidebar); /* Azul do sistema */
+    color: #FFFFFF;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-add:hover {
+    background-color: #3b5a94; /* Tom mais claro do azul */
+    box-shadow: 0 4px 12px rgba(47, 70, 115, 0.3);
+    transform: translateY(-2px);
+}
+.btn-add i {
+    font-size: 14px;
+}
+
+/* --- Container da Tabela (Card) --- */
+.table-responsive {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 10px 25px 25px 25px; /* Mais padding */
+    box-shadow: 0 2px 10px var(--shadow-color);
+    overflow-x: auto;
+}
+
+/* --- Tabela de Dados --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.data-table thead th {
+    color: var(--text-muted);
+    text-align: left;
+    padding: 20px 15px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    /* A borda "linear" */
+    border-bottom: 2px solid var(--border-color); 
+}
+
+.data-table tbody tr {
+    /* Borda "linear" em cada linha */
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none; /* Remove a borda da última linha */
+}
+
+.data-table tbody tr:hover {
+    /* Efeito hover sutil */
+    background-color: var(--bg-active); 
+}
+
+.data-table tbody td {
+    padding: 18px 15px;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+/* Destaque para o título da vaga */
+.data-table tbody td strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* --- Badges de Status --- */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 16px; /* Formato de pílula */
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+/* "Ponto" de status */
+.status-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Cores (Light Theme) */
+.status-aberta { background-color: #e6f7ec; color: #2d8653; }
+.status-aberta::before { background-color: #28a745; }
+.status-em_processo { background-color: #e7f3fe; color: #3b5a94; }
+.status-em_processo::before { background-color: #007bff; }
+.status-congelada { background-color: #fff8e6; color: #b38600; }
+.status-congelada::before { background-color: #ffc107; }
+.status-fechada { background-color: #f1f3f5; color: #64758C; }
+.status-fechada::before { background-color: #6c757d; }
+
+/* Cores (Dark Theme) */
+body.dark-theme .status-aberta { background-color: rgba(40, 167, 69, 0.2); color: #5ddc83; }
+body.dark-theme .status-em_processo { background-color: rgba(0, 123, 255, 0.2); color: #6bafff; }
+body.dark-theme .status-congelada { background-color: rgba(255, 193, 7, 0.2); color: #ffdc73; }
+body.dark-theme .status-fechada { background-color: rgba(108, 117, 125, 0.2); color: #a0a0b0; }
+
+/* --- Botões de Ação na Tabela --- */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end; /* Alinha à direita */
+}
+
+.action-buttons a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 15px;
+}
+.action-buttons a:hover {
+    border-color: var(--bg-sidebar);
+    background-color: var(--bg-sidebar);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+/* Estilo específico para botão de deletar (se for usar) */
+.action-buttons .btn-delete {
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+.action-buttons .btn-delete:hover {
+    background-color: #ffebee; /* Light red */
+    color: #dc3545; /* Red */
+    border-color: #ffebee;
+}
+body.dark-theme .action-buttons .btn-delete:hover {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #ff8a80; 
+    border-color: rgba(220, 53, 69, 0.2);
+}
+
+
+/* --- Estado Vazio --- */
+.no-results {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    border: 1px dashed var(--border-color);
+}
+
+/* --- Alertas --- */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+.alert-success {
+    background-color: #e6f7ec;
+    color: #2d8653;
+    border: 1px solid #b8e0c9;
+}
+.alert-warning {
+    background-color: #fff8e6;
+    color: #b38600;
+    border: 1px solid #ffeeba;
+}
+/* (Adicione .alert-info, .alert-danger se precisar) */
+
+body.dark-theme .alert-success {
+    background-color: rgba(40, 167, 69, 0.2); 
+    color: #5ddc83;
+    border-color: rgba(40, 167, 69, 0.4);
+}
+body.dark-theme .alert-warning {
+    background-color: rgba(255, 193, 7, 0.2); 
+    color: #ffdc73;
+    border-color: rgba(255, 193, 7, 0.4);
+}
