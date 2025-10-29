@@ -359,7 +359,7 @@ def criar_requisicao(request):
         'funcionario_logado': funcionario_logado,
     }
     
-    return render(request, 'rh/criar_requisicao.html', context)
+    return render(request, 'criar_requisicao.html', context)
 
 
 @login_required(login_url='login')
@@ -412,7 +412,7 @@ def detalhar_requisicao(request, requisicao_id):
         'pode_aprovar': pode_aprovar,
     }
     
-    return render(request, 'rh/detalhar_requisicao.html', context)
+    return render(request, 'detalhar_requisicao.html', context)
 
 
 @login_required(login_url='login')

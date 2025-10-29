@@ -134,24 +134,36 @@
 
 
 {% block extra_js %}
-    {# 1. Inclui scripts do base.html PRIMEIRO (jQuery, Select2 JS) #}
-    {{ block.super }} 
+    {# ✅ 1. Carrega jQuery DIRETAMENTE AQUI #}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-    {# 2. Script específico para ESTA página #}
+    {# ✅ 2. Carrega Select2 JS DIRETAMENTE AQUI (depois do jQuery) #}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> 
+    {# Usando rc.0 para combinar com seu CSS link #}
+
+    {# ✅ 3. Script específico para ESTA página (Executa DEPOIS de carregar jQuery e Select2 JS) #}
     <script>
-        // Usa a função ready do jQuery para garantir que o DOM está carregado E o jQuery está disponível
+        // Garante que o código rode apenas após o DOM estar pronto E jQuery/Select2 carregados
         $(document).ready(function() { 
-            console.log("Script rp_form.html iniciado"); // Log: Início do script
+            console.log("Script rp_form.html iniciado (versão com includes locais)"); 
 
             // --- Inicializa o Select2 ---
-            // Seleciona TODOS os elementos select dentro do .form-grid
             var $selects = $('.form-grid select');
             if ($selects.length > 0) {
-                console.log("Inicializando Select2 para", $selects.length, "select(s)");
-                $selects.select2({
-                    width: '100%', // Aplica largura
-                });
-                console.log("Select2 inicializado");
+                // Verifica se a função select2 existe ANTES de chamar
+                if ($.fn.select2) { 
+                    console.log("Inicializando Select2 para", $selects.length, "select(s)");
+                    try {
+                        $selects.select2({
+                            width: '100%', 
+                        });
+                        console.log("Select2 inicializado com sucesso.");
+                    } catch (e) {
+                        console.error("Erro ao inicializar Select2:", e);
+                    }
+                } else {
+                    console.error("Erro: Função $.fn.select2 não encontrada! O Select2 JS não carregou corretamente?");
+                }
             } else {
                  console.log("Nenhum elemento select encontrado em .form-grid para inicializar o Select2");
             }
@@ -160,26 +172,25 @@
             const tipoVagaSelect = $('#id_tipo_vaga'); 
             const substituicaoFields = $('#substituicao-fields');
 
-            // Verifica se os elementos existem antes de continuar
             if (tipoVagaSelect.length === 0) {
                 console.error("Não foi possível encontrar o elemento select #id_tipo_vaga!");
-                return; // Para se o select não for encontrado
+                return; 
             }
              if (substituicaoFields.length === 0) {
                 console.error("Não foi possível encontrar o elemento wrapper #substituicao-fields!");
-                return; // Para se o wrapper não for encontrado
+                return; 
             }
 
             function toggleSubstituicaoFields() {
-                var selectedValue = tipoVagaSelect.val(); // Pega o valor atual
+                var selectedValue = tipoVagaSelect.val(); 
                 console.log("Função toggleSubstituicaoFields chamada. Valor selecionado:", selectedValue); 
 
                 if (selectedValue === 'substituicao') { 
                     console.log("Condição atendida: Mostrando campos de substituição.");
-                    substituicaoFields.css('display', 'grid'); // Usa 'grid' para manter o layout
+                    substituicaoFields.css('display', 'grid'); 
                 } else {
                     console.log("Condição NÃO atendida: Escondendo campos de substituição.");
-                    substituicaoFields.css('display', 'none'); // Esconde
+                    substituicaoFields.css('display', 'none'); 
                 }
             }
 
@@ -190,11 +201,11 @@
             // Anexa o listener de evento para mudanças
             console.log("Anexando listener 'change' a #id_tipo_vaga");
             tipoVagaSelect.on('change', function() {
-                 console.log("#id_tipo_vaga mudou!"); // Log: Evento disparado
-                 toggleSubstituicaoFields(); // Chama a função na mudança
+                 console.log("#id_tipo_vaga mudou!"); 
+                 toggleSubstituicaoFields(); 
             }); 
 
-            console.log("Configuração do script rp_form.html finalizada"); // Log: Fim do script
+            console.log("Configuração do script rp_form.html finalizada"); 
         });
     </script>
 {% endblock extra_js %}
