@@ -29,7 +29,6 @@
                     <tr>
                         <th>ID</th>
                         <th>Funcionário</th>
-                        <th>Tipo</th>
                         <th>Cargo Proposto</th>
                         <th>Setor Proposto</th>
                         <th>Data Solicitação</th>
@@ -43,7 +42,6 @@
                     <tr>
                         <td>#{{ mp.id }}</td>
                         <td><strong>{{ mp.funcionario_movido.nome }}</strong></td>
-                        <td>{{ mp.get_tipo_movimentacao_display }}</td>
                         <td>{{ mp.cargo_proposto.nome }}</td>
                         <td>{{ mp.setor_proposto.nome }}</td>
                         <td>{{ mp.criado_em|date:"d/m/Y H:i" }}</td>

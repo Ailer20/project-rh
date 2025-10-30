@@ -927,29 +927,36 @@ class PodeVerMPMixin(BasePermissionMixin):
         # Permissões para VER:
         # 1. É o solicitante?
         # 2. É o funcionário sendo movido?
-        # 3. É o aprovador atual?
+        # 3. É um dos APROVADORES PENDENTES (gestor prop/atual ou RH)? <<< MUDANÇA AQUI
         # 4. É um dos aprovadores anteriores?
-        # 5. É do RH/DP? (Requer a tag ou lógica similar)
+        # 5. É do RH/DP?
         # 6. É Diretor (Nível 1)?
 
         is_rh_dp = False
         if user_func.setor_primario:
              rh_dp_setores = ['RECURSOS HUMANOS', 'DEPARTAMENTO DE PESSOAL']
-             if user_func.setor_primario.nome.upper() in rh_dp_setores:
+             if user_func.setor_primario.nome.upper() in [s.upper() for s in rh_dp_setores]: # Use list comprehension para upper
                   is_rh_dp = True
 
+        # --- ✅ LÓGICA DE VERIFICAÇÃO ATUALIZADA ---
         pode_ver = (
             mp.solicitante == user_func or
             mp.funcionario_movido == user_func or
-            mp.aprovador_atual == user_func or
+            # Verifica se é um dos aprovadores *atuais* pendentes
+            (mp.status == 'pendente_gestores' and (mp.aprovador_gestor_proposto == user_func or mp.aprovador_gestor_atual == user_func)) or
+            (mp.status == 'pendente_rh' and mp.aprovador_rh == user_func) or
+            # Verifica se foi um aprovador anterior ou quem rejeitou
             mp.aprovado_por_gestor_proposto == user_func or
             mp.aprovado_por_gestor_atual == user_func or
             mp.aprovado_por_rh == user_func or
             mp.rejeitado_por == user_func or
+            # Permissões gerais
             is_rh_dp or
-            user_func.cargo.nivel == 1
+            (user_func.cargo and user_func.cargo.nivel == 1) # Adicionado check se user_func.cargo existe
         )
+        # ---------------------
         return pode_ver
+    
 
 # --- View para Criar MP ---
 class MovimentacaoPessoalCreateView(Nivel5RequiredMixin, CreateView): # ADMs e superiores podem criar
@@ -961,7 +968,6 @@ class MovimentacaoPessoalCreateView(Nivel5RequiredMixin, CreateView): # ADMs e s
         'cargo_proposto',
         'setor_proposto',
         'salario_proposto',
-        'tipo_movimentacao',
         'data_efetiva',
         'justificativa',
         # 'anexo' # Descomente se adicionar anexo
@@ -1066,18 +1072,29 @@ class MinhasMovimentacoesListView(BasePermissionMixin, ListView):
 # --- View para Listar MPs para Aprovar ---
 class AprovarMovimentacoesListView(BasePermissionMixin, ListView):
     model = MovimentacaoPessoal
-    template_name = 'rh/aprovar_mps_list.html' # <- Vamos criar este template
+    template_name = 'rh/aprovar_mps_list.html'
     context_object_name = 'movimentacoes'
     paginate_by = 15
 
     def get_queryset(self):
-        # Mostra MPs que estão aguardando aprovação do usuário logado
-        # E que não estão finalizadas (aprovada/rejeitada)
+        user_func = self.funcionario_logado
+        
+        # Filtro complexo:
+        # 1. Onde eu sou Gestor Proposto E ainda não aprovei
+        q_proposto = Q(aprovador_gestor_proposto=user_func) & Q(gestor_proposto_aprovou=False)
+        
+        # 2. Onde eu sou Gestor Atual E ainda não aprovei
+        q_atual = Q(aprovador_gestor_atual=user_func) & Q(gestor_atual_aprovou=False)
+        
+        # 3. Onde eu sou Aprovador de RH E o status é 'pendente_rh'
+        q_rh = Q(aprovador_rh=user_func) & Q(status='pendente_rh')
+        
+        # Une as condições com OR e filtra por status que não estão finalizados
         return MovimentacaoPessoal.objects.filter(
-            aprovador_atual=self.funcionario_logado
+            q_proposto | q_atual | q_rh
         ).exclude(
             status__in=['aprovada', 'rejeitada']
-        ).order_by('criado_em')
+        ).distinct().order_by('criado_em')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1085,26 +1102,54 @@ class AprovarMovimentacoesListView(BasePermissionMixin, ListView):
         return context
 
 # --- View para Detalhar uma MP ---
-class MovimentacaoPessoalDetailView(PodeVerMPMixin, DetailView): # Usa o Mixin específico
+class MovimentacaoPessoalDetailView(PodeVerMPMixin, DetailView):
     model = MovimentacaoPessoal
-    template_name = 'rh/mp_detail.html' # <- Vamos criar este template
-    context_object_name = 'mp' # Usaremos 'mp' no template
+    template_name = 'rh/mp_detail.html'
+    context_object_name = 'mp'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         mp = self.object
         user_func = self.funcionario_logado
         
-        # Define se o usuário logado PODE aprovar/rejeitar esta MP
-        pode_agir = (
-            mp.aprovador_atual == user_func and 
-            mp.status not in ['aprovada', 'rejeitada']
-        )
-        context['pode_aprovar_rejeitar'] = pode_agir
-        context['titulo_pagina'] = f"Detalhes da Movimentação #{mp.id}"
-        return context
+        pode_aprovar = False
+        pode_rejeitar = False
 
-# --- Funções para Aprovar e Rejeitar MP ---
+        # --- DEBUG PRINTS ---
+        print("-" * 20)
+        print(f"DEBUG: User Func Logado: ID={user_func.id}, Nome={user_func.nome}")
+        print(f"DEBUG: MP Status: {mp.status}")
+        print(f"DEBUG: Aprovador Gestor Atual: {mp.aprovador_gestor_atual}")
+        print(f"DEBUG: Gestor Atual Aprovou? {mp.gestor_atual_aprovou}")
+        print(f"DEBUG: Aprovador Gestor Proposto: {mp.aprovador_gestor_proposto}")
+        print(f"DEBUG: Gestor Proposto Aprovou? {mp.gestor_proposto_aprovou}")
+        print(f"DEBUG: Aprovador RH: {mp.aprovador_rh}")
+        # --- FIM DEBUG PRINTS ---
+
+        if mp.status == 'pendente_gestores':
+            condicao_proposto = (mp.aprovador_gestor_proposto == user_func and not mp.gestor_proposto_aprovou)
+            condicao_atual = (mp.aprovador_gestor_atual == user_func and not mp.gestor_atual_aprovou)
+            print(f"DEBUG: Condição Proposto OK? {condicao_proposto}")
+            print(f"DEBUG: Condição Atual OK? {condicao_atual}")
+            if condicao_proposto or condicao_atual:
+                pode_aprovar = True
+                pode_rejeitar = True
+
+        elif mp.status == 'pendente_rh':
+            condicao_rh = (mp.aprovador_rh == user_func)
+            print(f"DEBUG: Condição RH OK? {condicao_rh}")
+            if condicao_rh:
+                pode_aprovar = True
+                pode_rejeitar = True
+        
+        context['pode_aprovar'] = pode_aprovar
+        context['pode_rejeitar'] = pode_rejeitar
+        context['titulo_pagina'] = f"Detalhes da Movimentação #{mp.id}"
+        print(f"DEBUG: Final pode_aprovar={pode_aprovar}, pode_rejeitar={pode_rejeitar}")
+        print("-" * 20)
+        return context
+    
+# --- Função para Aprovar MP (ATUALIZADA) ---
 @login_required(login_url='login')
 @require_POST
 def aprovar_mp_view(request, pk):
@@ -1115,36 +1160,50 @@ def aprovar_mp_view(request, pk):
         messages.error(request, "Funcionário não encontrado.")
         return redirect('dashboard')
 
-    # Validação rigorosa: Só pode aprovar se for o aprovador atual e não estiver finalizada
-    if mp.aprovador_atual != funcionario_logado or mp.status in ['aprovada', 'rejeitada']:
-        messages.error(request, "Você não tem permissão para aprovar esta movimentação ou ela não está mais pendente.")
-        return redirect('detalhar_mp', pk=mp.pk) # <- Nova URL
+    if mp.status == 'pendente_gestores':
+        # Verifica se o usuário é um dos gestores pendentes
+        if (funcionario_logado == mp.aprovador_gestor_proposto and not mp.gestor_proposto_aprovou) or \
+           (funcionario_logado == mp.aprovador_gestor_atual and not mp.gestor_atual_aprovou):
+            
+            mp.aprovar(aprovador=funcionario_logado) # Chama o método de aprovação de gestor
+            
+            if mp.status == 'pendente_rh':
+                messages.success(request, f"Aprovação registrada. A MP #{mp.id} foi encaminhada ao RH.")
+            else:
+                messages.success(request, f"Aprovação de gestor registrada para a MP #{mp.id}. Aguardando outra aprovação de gestor.")
+        else:
+            messages.error(request, "Você não tem permissão para aprovar esta etapa (Gestor).")
 
-    # Chama o método do modelo para avançar
-    mp.avancar_aprovacao(aprovador_que_aprovou=funcionario_logado)
+    elif mp.status == 'pendente_rh':
+        # Verifica se é o aprovador de RH
+        if funcionario_logado == mp.aprovador_rh:
+            aprovado = mp.aprovar_rh(aprovador_rh=funcionario_logado)
+            
+            if aprovado:
+                messages.success(request, f"Movimentação Pessoal #{mp.id} APROVADA com sucesso!")
+                
+                # --- Efetivar a Movimentação ---
+                try:
+                    funcionario = mp.funcionario_movido
+                    funcionario.cargo = mp.cargo_proposto
+                    funcionario.setor_primario = mp.setor_proposto
+                    # Adicione salário se aplicável
+                    # funcionario.salario = mp.salario_proposto 
+                    funcionario.save()
+                    messages.info(request, f"Dados do funcionário {funcionario.nome} atualizados.")
+                except Exception as e:
+                    messages.error(request, f"Erro ao tentar efetivar a movimentação: {e}")
+            else:
+                 messages.error(request, "Falha ao processar aprovação do RH.")
+        else:
+            messages.error(request, "Você não tem permissão para aprovar esta etapa (RH).")
 
-    if mp.status == 'aprovada':
-        messages.success(request, f"Movimentação Pessoal #{mp.id} APROVADA com sucesso!")
-
-        # --- IMPLEMENTAR AQUI ---
-        try:
-            funcionario = mp.funcionario_movido
-            funcionario.cargo = mp.cargo_proposto
-            funcionario.setor_primario = mp.setor_proposto
-            # funcionario.salario = mp.salario_proposto # Se você tiver um campo de salário no Funcionario
-            funcionario.save()
-            messages.info(request, f"Dados do funcionário {funcionario.nome} atualizados.")
-            # Considerar notificar o funcionário, gestores, etc.
-        except Exception as e:
-            messages.error(request, f"Erro ao tentar efetivar a movimentação do funcionário: {e}")
-            # Considerar reverter o status da MP ou logar o erro criticamente
-        # --- FIM DA IMPLEMENTAÇÃO ---
     else:
-        messages.info(request, f"Movimentação Pessoal #{mp.id} encaminhada para {mp.aprovador_atual.nome}.")
-        # Notificar próximo aprovador?
+        messages.error(request, "Esta movimentação não está pendente de aprovação.")
 
-    return redirect('listar_mps_para_aprovar') # <- Nova URL
+    return redirect('listar_mps_para_aprovar')
 
+# --- Função para Rejeitar MP (Verificar se está correta) ---
 @login_required(login_url='login')
 @require_POST
 def rejeitar_mp_view(request, pk):
@@ -1155,19 +1214,91 @@ def rejeitar_mp_view(request, pk):
         messages.error(request, "Funcionário não encontrado.")
         return redirect('dashboard')
 
-    # Validação
-    if mp.aprovador_atual != funcionario_logado or mp.status in ['aprovada', 'rejeitada']:
-        messages.error(request, "Você não tem permissão para rejeitar esta movimentação ou ela não está mais pendente.")
-        return redirect('detalhar_mp', pk=mp.pk) # <- Nova URL
-
+    # --- Lógica de Permissão de Rejeição ATUALIZADA ---
+    pode_rejeitar = False
+    if mp.status == 'pendente_gestores':
+        if (mp.aprovador_gestor_proposto == funcionario_logado and not mp.gestor_proposto_aprovou) or \
+           (mp.aprovador_gestor_atual == funcionario_logado and not mp.gestor_atual_aprovou):
+            pode_rejeitar = True
+    elif mp.status == 'pendente_rh':
+        if mp.aprovador_rh == funcionario_logado:
+            pode_rejeitar = True
+    
+    if not pode_rejeitar:
+        messages.error(request, "Você não tem permissão para rejeitar esta movimentação.")
+        return redirect('detalhar_mp', pk=mp.pk)
+    
     observacao = request.POST.get('observacao', '')
     if not observacao:
         messages.error(request, "A observação é obrigatória para rejeitar a movimentação.")
-        return redirect('detalhar_mp', pk=mp.pk) # <- Nova URL
+        return redirect('detalhar_mp', pk=mp.pk) 
 
-    # Chama o método do modelo para rejeitar
     mp.rejeitar(aprovador_que_rejeitou=funcionario_logado, observacao=observacao)
     messages.warning(request, f"Movimentação Pessoal #{mp.id} REJEITADA.")
-    # Notificar solicitante?
 
-    return redirect('listar_mps_para_aprovar') # <- Nova URL
+    return redirect('listar_mps_para_aprovar')
+
+
+class HistoricoMPListView(BasePermissionMixin, ListView):
+    """
+    Mostra um histórico de MPs concluídas ('aprovada' ou 'rejeitada')
+    com base no perfil do usuário logado.
+    """
+    model = MovimentacaoPessoal
+    template_name = 'rh/historico_mps_list.html' # <- Vamos criar
+    context_object_name = 'movimentacoes'
+    paginate_by = 20
+
+    def get_queryset(self):
+        user_func = self.funcionario_logado
+        
+        # Se não houver funcionário logado (ex: Superusuário sem perfil), não faz nada
+        if not user_func or not user_func.cargo:
+            if self.request.user.is_superuser:
+                 # Superusuário sem perfil vê tudo
+                 return MovimentacaoPessoal.objects.filter(status__in=['aprovada', 'rejeitada']).order_by('-criado_em')
+            return MovimentacaoPessoal.objects.none()
+
+        user_nivel = user_func.cargo.nivel
+        
+        # 1. Base: MPs finalizadas
+        finished_qs = MovimentacaoPessoal.objects.filter(
+            status__in=['aprovada', 'rejeitada']
+        )
+
+        # 2. Verifica se é RH/DP
+        is_rh_dp = False
+        if user_func.setor_primario:
+            rh_dp_setores = ['RECURSOS HUMANOS', 'DEPARTAMENTO DE PESSOAL']
+            if user_func.setor_primario.nome.upper() in [s.upper() for s in rh_dp_setores]:
+                 is_rh_dp = True
+
+        # 3. Aplicar Filtros
+
+        # REGRA 1: RH/DP e Diretor (Nível 1) veem TUDO
+        if is_rh_dp or user_nivel == 1 or self.request.user.is_superuser:
+            return finished_qs.order_by('-criado_em')
+        
+        # REGRA 2: Gestor/Coordenador (Nível 2 e 3) veem o que APROVARAM ou REJEITARAM
+        # (Lógica adaptada para os múltiplos aprovadores da MP)
+        if user_nivel == 2 or user_nivel == 3:
+            return finished_qs.filter(
+                Q(aprovado_por_gestor_proposto=user_func) |
+                Q(aprovado_por_gestor_atual=user_func) |
+                Q(aprovado_por_rh=user_func) | # (Caso um gestor também seja do RH)
+                Q(rejeitado_por=user_func)
+            ).distinct().order_by('-criado_em')
+
+        # REGRA 3: Solicitante (Nível 4 e 5) veem o que CRIARAM
+        if user_nivel == 4 or user_nivel == 5:
+            return finished_qs.filter(
+                solicitante=user_func
+            ).order_by('-criado_em')
+        
+        # Fallback
+        return MovimentacaoPessoal.objects.none()
+            
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo_pagina'] = "Histórico de Movimentações Pessoais"
+        return context

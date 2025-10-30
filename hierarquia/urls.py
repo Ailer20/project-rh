@@ -40,6 +40,7 @@ urlpatterns = [
     path('mp/minhas/', views.MinhasMovimentacoesListView.as_view(), name='minhas_mps'),
     path('mp/aprovar/', views.AprovarMovimentacoesListView.as_view(), name='listar_mps_para_aprovar'),
     path('mp/<int:pk>/', views.MovimentacaoPessoalDetailView.as_view(), name='detalhar_mp'),
+    path('mp/historico/', views.HistoricoMPListView.as_view(), name='historico_mps'),
     # Funções de ação MP
     path('mp/<int:pk>/aprovar/post/', views.aprovar_mp_view, name='aprovar_mp'),
     path('mp/<int:pk>/rejeitar/post/', views.rejeitar_mp_view, name='rejeitar_mp'),

@@ -15,16 +15,16 @@
     {# Bloco para CSS específico da página atual #}
     {% block extra_css %}{% endblock extra_css %}
 </head>
-<body> 
+<body {% if request.COOKIES.theme == 'dark' %}class="dark-theme"{% endif %}> {# Aplica tema baseado em cookie #}
+
     <nav class="navbar">
         <h1>Sistema de RH</h1>
         <div class="navbar-user">
             {% if user.is_authenticated %}
-                {# Tenta buscar o funcionário associado. #}
                 {% with funcionario_logado=request.user.funcionario %}
                     <span>
                         {{ funcionario_logado.nome|default:user.username }}
-                        {% if funcionario_logado.cargo %} ({{ funcionario_logado.cargo.get_nivel_display }}) {% endif %} {# Use get_nivel_display ou nome #}
+                        {% if funcionario_logado.cargo %} ({{ funcionario_logado.cargo.get_nivel_display }}) {% endif %}
                     </span>
                 {% endwith %}
             {% else %}
@@ -32,7 +32,6 @@
             {% endif %}
 
             <button id="theme-toggle" class="theme-toggle-btn" aria-label="Alternar tema">
-                {# Ícone será definido pelo JS #}
                 <i class="fas fa-moon"></i>
             </button>
 
@@ -54,54 +53,81 @@
             </div>
 
             <nav class="menu-items">
-                {# Tenta buscar o funcionário associado. #}
                 {% with funcionario_logado=request.user.funcionario %}
-                    {# Chama a tag uma vez para verificar se é RH/DP #}
                     {% is_rh_or_dp funcionario_logado as eh_rh %}
 
-                    {# Link Visível para Todos Logados #}
                     <a href="{% url 'dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                         <i class="fas fa-home fa-fw"></i> <span class="menu-text">Dashboard</span>
                     </a>
 
-                    {# Link Visível para Todos Logados #}
                     <a href="{% url 'listar_setores_funcionarios' %}" class="menu-item {% if 'funcionarios' in request.resolver_match.view_name or 'detalhar_funcionario' in request.resolver_match.url_name %}active{% endif %}">
                         <i class="fas fa-users fa-fw"></i> <span class="menu-text">Funcionários</span>
                     </a>
 
-                    {# --- VAGAS (RH/DP ou Superuser) --- #}
-                    {# ✅ CONDIÇÃO SIMPLIFICADA #}
                     {% if user.is_superuser or eh_rh %}
                         <a href="{% url 'listar_vagas' %}" class="menu-item {% if 'vaga' in request.resolver_match.url_name %}active{% endif %}">
                             <i class="fas fa-briefcase fa-fw"></i> <span class="menu-text">Gerenciar Vagas</span>
                         </a>
                     {% endif %}
 
-                    {# --- REQUISIÇÃO PESSOAL --- #}
-                    {% if user.is_authenticated %} {# Só mostra links de RP se logado #}
-                        {# Verifica se tem perfil de funcionário para os próximos links #}
+                    {% if user.is_authenticated %}
                         {% if funcionario_logado %}
-                            {# Abrir RP: Nível 5 ou superior OU Superuser #}
-                            {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}
-                                <a href="{% url 'criar_rp' %}" class="menu-item {% if request.resolver_match.url_name == 'criar_rp' %}active{% endif %}">
-                                    <i class="fas fa-user-plus fa-fw"></i> <span class="menu-text">Abrir RP</span>
+{% with rp_urls='criar_rp,minhas_rps,listar_rps_para_aprovar,historico_rps,detalhar_rp,editar_rp_rh,aprovar_rp,rejeitar_rp' %}
+                            <div class="sidebar-module {% if request.resolver_match.url_name in rp_urls %}open{% endif %}">
+                                <a href="#" class="menu-item module-trigger">
+                                    <i class="fas fa-file-signature fa-fw"></i> 
+                                    <span class="menu-text">Requisição Pessoal</span>
+                                    <i class="fas fa-chevron-down module-arrow"></i>
                                 </a>
-                            {% endif %}
-                            {# Minhas RPs: Todos podem ver #}
-                            <a href="{% url 'minhas_rps' %}" class="menu-item {% if request.resolver_match.url_name == 'minhas_rps' %}active{% endif %}">
-                                <i class="fas fa-file-alt fa-fw"></i> <span class="menu-text">Minhas RPs</span>
-                            </a>
-                            {# Aprovar RPs: Nível 4 ou sup., OU RH/DP, OU Superuser #}
-                            {# ✅ CONDIÇÃO SIMPLIFICADA #}
-                            {% if user.is_superuser or eh_rh or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 4 %}
-                                <a href="{% url 'listar_rps_para_aprovar' %}" class="menu-item {% if request.resolver_match.url_name == 'listar_rps_para_aprovar' %}active{% endif %}">
-                                    <i class="fas fa-check-double fa-fw"></i> <span class="menu-text">Aprovar RPs</span>
+                                <div class="module-content">
+                                    {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}
+                                        <a href="{% url 'criar_rp' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'criar_rp' %}active{% endif %}">
+                                            <span class="menu-text">Abrir RP</span>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'minhas_rps' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'minhas_rps' %}active{% endif %}">
+                                        <span class="menu-text">Minhas RPs</span>
+                                    </a>
+                                    {% if user.is_superuser or eh_rh or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 4 %}
+                                        <a href="{% url 'listar_rps_para_aprovar' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'listar_rps_para_aprovar' %}active{% endif %}">
+                                            <span class="menu-text">Aprovar RPs</span>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'historico_rps' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'historico_rps' %}active{% endif %}">
+                                        <span class="menu-text">Histórico de RPs</span>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endwith %}
+
+                            {# ✅ LISTA DE URLS ATUALIZADA (incluindo aprovar/rejeitar) #}
+                            {% with mp_urls='criar_mp,minhas_mps,listar_mps_para_aprovar,historico_mps,detalhar_mp,aprovar_mp,rejeitar_mp' %}
+                            <div class="sidebar-module {% if request.resolver_match.url_name in mp_urls %}open{% endif %}">
+                                <a href="#" class="menu-item module-trigger">
+                                    <i class="fas fa-people-arrows fa-fw"></i> 
+                                    <span class="menu-text">Movimentação Pessoal</span>
+                                    <i class="fas fa-chevron-down module-arrow"></i>
                                 </a>
-                            {% endif %}
-                            {# Histórico RPs: Todos podem ver #}
-                            <a href="{% url 'historico_rps' %}" class="menu-item {% if request.resolver_match.url_name == 'historico_rps' %}active{% endif %}">
-                                <i class="fas fa-history fa-fw"></i> <span class="menu-text">Histórico de RPs</span>
-                            </a>
+                                <div class="module-content">
+                                    {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}
+                                        <a href="{% url 'criar_mp' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'criar_mp' %}active{% endif %}">
+                                            <span class="menu-text">Solicitar MP</span>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'minhas_mps' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'minhas_mps' %}active{% endif %}">
+                                        <span class="menu-text">Minhas MPs</span>
+                                    </a>
+                                    {% if user.is_superuser or eh_rh or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 4 %}
+                                        <a href="{% url 'listar_mps_para_aprovar' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'listar_mps_para_aprovar' %}active{% endif %}">
+                                            <span class="menu-text">Aprovar MPs</span>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'historico_mps' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'historico_mps' %}active{% endif %}">
+                                        <span class="menu-text">Histórico de MPs</span>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endwith %}
 
                             {# --- ADMINISTRAÇÃO (Diretor ou Superuser) --- #}
                             {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel == 1 %}
@@ -112,33 +138,10 @@
                                     <i class="fas fa-sitemap fa-fw"></i> <span class="menu-text">Gerenciar Setores</span>
                                 </a>
                             {% endif %}
-                            {# ✅ NOVO: Link para Abrir MP (usa a mesma permissão de Abrir RP?) #}
-                            {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}                                
-                                <a href="{% url 'criar_mp' %}" class="menu-item {% if request.resolver_match.url_name == 'criar_mp' %}active{% endif %}">
-                                    <i class="fas fa-people-arrows fa-fw"></i> <span class="menu-text">Solicitar MP</span>
-                                </a>
-                            {% endif %}
-                            {# ✅ NOVO: Link para Minhas MPs #}
-                            <a href="{% url 'minhas_mps' %}" class="menu-item {% if request.resolver_match.url_name == 'minhas_mps' %}active{% endif %}">
-                                <i class="fas fa-list-alt fa-fw"></i> <span class="menu-text">Minhas MPs</span>
-                            </a>
-                            {# ✅ NOVO: Link para Aprovar MPs (usa a mesma permissão de Aprovar RPs?) #}
-                            {% if user.is_superuser or eh_rh or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 4 %}
-                                <a href="{% url 'listar_mps_para_aprovar' %}" class="menu-item {% if request.resolver_match.url_name == 'listar_mps_para_aprovar' %}active{% endif %}">
-                                    <i class="fas fa-user-check fa-fw"></i> <span class="menu-text">Aprovar MPs</span>
-                                </a>
-                            {% endif %}
-                         {# Se for Superuser mas NÃO tiver perfil Funcionario (pouco provável, mas seguro) #}
-                         {% elif user.is_superuser %}
-                                <a href="{% url 'criar_rp' %}" class="menu-item {% if request.resolver_match.url_name == 'criar_rp' %}active{% endif %}"><i class="fas fa-user-plus fa-fw"></i> <span class="menu-text">Abrir RP</span></a>
-                                <a href="{% url 'minhas_rps' %}" class="menu-item {% if request.resolver_match.url_name == 'minhas_rps' %}active{% endif %}"><i class="fas fa-file-alt fa-fw"></i> <span class="menu-text">Minhas RPs</span></a>
-                                <a href="{% url 'listar_rps_para_aprovar' %}" class="menu-item {% if request.resolver_match.url_name == 'listar_rps_para_aprovar' %}active{% endif %}"><i class="fas fa-check-double fa-fw"></i> <span class="menu-text">Aprovar RPs</span></a>
-                                <a href="{% url 'historico_rps' %}" class="menu-item {% if request.resolver_match.url_name == 'historico_rps' %}active{% endif %}"><i class="fas fa-history fa-fw"></i> <span class="menu-text">Histórico de RPs</span></a>
-                                <a href="{% url 'gerenciar_cargos' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_cargos' %}active{% endif %}"><i class="fas fa-id-badge fa-fw"></i> <span class="menu-text">Gerenciar Cargos</span></a>
-                                <a href="{% url 'gerenciar_setores' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_setores' %}active{% endif %}"><i class="fas fa-sitemap fa-fw"></i> <span class="menu-text">Gerenciar Setores</span></a>
-                         {% endif %}
-                    {% endif %} {# Fim do if user.is_authenticated #}
-
+                        {% elif user.is_superuser %}
+                            {# Links para Superuser sem perfil #}
+                        {% endif %}
+                    {% endif %}
                 {% endwith %}
             </nav>
 
@@ -149,7 +152,6 @@
              {% if messages %}
                  <div class="messages-container" style="margin-bottom: 20px;">
                      {% for message in messages %}
-                         {# Use classes .alert do seu CSS base, se existirem #}
                          <div class="alert alert-{{ message.tags }}" role="alert">
                              {{ message }}
                          </div>
@@ -170,22 +172,19 @@
             function setTheme(theme) {
                 if (theme === 'dark') {
                     body.classList.add('dark-theme');
-                    if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>'; // Icon sun
-                    document.cookie = "theme=dark;path=/;max-age=31536000;SameSite=Lax"; // SameSite=Lax recomendado
+                    if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+                    document.cookie = "theme=dark;path=/;max-age=31536000;SameSite=Lax";
                 } else {
                     body.classList.remove('dark-theme');
-                    if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>'; // Icon moon
+                    if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
                     document.cookie = "theme=light;path=/;max-age=31536000;SameSite=Lax";
                 }
             }
             const currentCookieTheme = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
             const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
             let initialTheme = 'light';
-            if (currentCookieTheme) {
-                initialTheme = currentCookieTheme;
-            } else if (prefersDarkScheme.matches) {
-                 initialTheme = 'dark'; // Usa preferência do sistema se não houver cookie
-            }
+            if (currentCookieTheme) { initialTheme = currentCookieTheme; } 
+            else if (prefersDarkScheme.matches) { initialTheme = 'dark'; }
             setTheme(initialTheme);
             if(themeToggleBtn) {
                 themeToggleBtn.addEventListener('click', () => {
@@ -198,35 +197,31 @@
             const sidebar = document.getElementById('sidebar');
             const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
             const mainContent = document.getElementById('main-content');
-            let isPinned = localStorage.getItem('sidebarPinned') === 'true'; // Lê do localStorage
+            let isPinned = localStorage.getItem('sidebarPinned') === 'true';
             function applySidebarState() {
-                if (!sidebar || !pinSidebarBtn || !mainContent) {
-                    // console.warn("Sidebar elements not found for pinning logic."); // Pode descomentar para debug
-                    return;
-                }
+                if (!sidebar || !pinSidebarBtn || !mainContent) { return; }
                 if (isPinned) {
                     sidebar.classList.remove('sidebar-collapsed');
                     sidebar.classList.add('sidebar-pinned');
-                    pinSidebarBtn.innerHTML = '<i class="fas fa-lock"></i>'; // Ícone de cadeado
+                    pinSidebarBtn.innerHTML = '<i class="fas fa-lock"></i>';
                     pinSidebarBtn.setAttribute('aria-label', 'Desafixar menu lateral');
-                    mainContent.style.marginLeft = 'var(--sidebar-width-expanded)'; // Ajusta margem
+                    mainContent.style.marginLeft = 'var(--sidebar-width-expanded)';
                 } else {
                     sidebar.classList.remove('sidebar-pinned');
-                    sidebar.classList.add('sidebar-collapsed'); // Começa collapsed se não pinado
-                    pinSidebarBtn.innerHTML = '<i class="fas fa-thumbtack"></i>'; // Ícone de pino
+                    sidebar.classList.add('sidebar-collapsed');
+                    pinSidebarBtn.innerHTML = '<i class="fas fa-thumbtack"></i>';
                     pinSidebarBtn.setAttribute('aria-label', 'Fixar menu lateral');
-                     mainContent.style.marginLeft = 'var(--sidebar-width-collapsed)'; // Ajusta margem
+                     mainContent.style.marginLeft = 'var(--sidebar-width-collapsed)';
                 }
             }
-            applySidebarState(); // Aplica estado inicial
+            applySidebarState();
             if (pinSidebarBtn) {
                 pinSidebarBtn.addEventListener('click', () => {
-                    isPinned = !isPinned; // Inverte o estado
-                    localStorage.setItem('sidebarPinned', isPinned); // Salva no localStorage
-                    applySidebarState(); // Reaplica o estado visual
+                    isPinned = !isPinned;
+                    localStorage.setItem('sidebarPinned', isPinned);
+                    applySidebarState();
                 });
             }
-           // Efeito hover apenas se NÃO estiver pinado
            if (sidebar) {
                 sidebar.addEventListener('mouseenter', () => {
                     if (!isPinned) {
@@ -241,15 +236,25 @@
                     }
                 });
            }
+           
+           // --- ✅ NOVO SCRIPT DO MÓDULO SANFONA ---
+           const moduleTriggers = document.querySelectorAll('.module-trigger');
+           moduleTriggers.forEach(trigger => {
+               trigger.addEventListener('click', (e) => {
+                   e.preventDefault(); // Impede que o link '#' navegue
+                   const module = trigger.closest('.sidebar-module');
+                   if (module) {
+                       module.classList.toggle('open');
+                   }
+               });
+           });
         });
     </script>
 
     {# === Bloco para JS específico da página === #}
     {% block extra_js %}
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
-
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script> 
         {# Scripts de páginas filhas serão injetados AQUI via {{ block.super }} #}
     {% endblock extra_js %}
 

@@ -27,7 +27,6 @@
 }
 
 /* --- Dark Theme Variables --- */
-/* --- Dark Theme Variables --- */
 body.dark-theme {
     --bg-primary: #1a1a1a;       /* Slightly lighter dark for cards/elements */
     --bg-secondary: #0D0D0D;     /* Darkest for main content background */
@@ -205,7 +204,7 @@ body {
 .main-content {
     flex: 1;
     overflow-y: auto;
-    padding: 30px; /* Verifique se este valor está bom */
+    padding: 30px;
     background-color: var(--bg-secondary);
     margin-left: var(--sidebar-width-expanded);
     transition: margin-left 0.3s ease;
@@ -214,7 +213,7 @@ body {
     margin-left: var(--sidebar-width-collapsed);
 }
 .container {
-    max-width: 1000px; /* Tente 1100px, 1000px, 960px, etc. */
+    max-width: 1000px;
     margin: 0 auto;
     padding: 0;
 }
@@ -242,4 +241,123 @@ body {
 @media (max-width: 768px) {
     .navbar { padding: 15px 20px; height: auto; }
     .main-content { padding: 15px; }
+}
+
+/* --- Alertas de Mensagem (para o base.html) --- */
+.alert {
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-weight: 500;
+}
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+.alert-error { /* Django usa 'error' tag level */
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+/* Dark theme alerts */
+body.dark-theme .alert-success {
+    background-color: rgba(40, 167, 69, 0.2); 
+    color: #5ddc83;
+    border-color: rgba(40, 167, 69, 0.4);
+}
+body.dark-theme .alert-info {
+    background-color: rgba(0, 123, 255, 0.2); 
+    color: #6bafff;
+    border-color: rgba(0, 123, 255, 0.4);
+}
+body.dark-theme .alert-warning {
+    background-color: rgba(255, 193, 7, 0.2); 
+    color: #ffdc73;
+    border-color: rgba(255, 193, 7, 0.4);
+}
+body.dark-theme .alert-error {
+    background-color: rgba(220, 53, 69, 0.2); 
+    color: #ff8a80;
+    border-color: rgba(220, 53, 69, 0.4);
+}
+
+
+/* --- ✅ NOVO: Estilos do Módulo (Menu Sanfona) --- */
+.sidebar-module {
+    overflow: hidden; /* Essencial para a animação de altura */
+}
+
+/* O "botão" que abre o módulo */
+.sidebar-module .module-trigger {
+    display: flex;
+    justify-content: space-between; /* Alinha o ícone da seta */
+    align-items: center;
+    cursor: pointer; /* Adiciona cursor de clique */
+}
+
+/* A seta (ícone) */
+.sidebar-module .module-arrow {
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: transform 0.3s ease;
+    margin-right: 0; /* Remove margem do ícone principal */
+    width: auto; /* Reseta a largura do ícone */
+}
+
+/* Os links dentro do módulo */
+.sidebar-module .module-content {
+    max-height: 0; /* ✅ COMEÇA FECHADO */
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: var(--bg-active); /* Fundo sutil para os sub-itens */
+}
+
+/* Links de sub-item */
+.sidebar-module .sub-item {
+    padding-left: 55px; /* Indentação (25px + 12px + 18px) */
+    font-size: 14px;
+    color: var(--text-sidebar);
+}
+.sidebar-module .sub-item:hover {
+     background-color: var(--bg-hover);
+}
+.sidebar-module .sub-item.active {
+    font-weight: 600;
+    color: var(--text-sidebar-hover);
+    border-left-color: transparent; /* Remove a borda principal */
+    background-color: var(--bg-hover); 
+}
+
+/* --- Estado Aberto --- */
+/* Quando o JS adicionar a classe .open, este CSS será aplicado */
+.sidebar-module.open .module-content {
+    max-height: 500px; /* Altura máxima para abrir (ajuste se tiver muitos links) */
+    transition: max-height 0.4s ease-in;
+}
+
+/* Gira a seta quando aberto */
+.sidebar-module.open .module-trigger .module-arrow {
+    transform: rotate(180deg);
+}
+
+/* Deixa o link principal "ativo" quando o módulo está aberto */
+.sidebar-module.open .module-trigger {
+    background-color: var(--bg-active);
+    color: var(--text-sidebar-hover);
+    border-left-color: var(--border-accent);
+}
+.sidebar-module.open .module-trigger i {
+    color: var(--text-sidebar-hover);
 }

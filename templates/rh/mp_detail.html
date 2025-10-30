@@ -45,7 +45,6 @@
             <div class="detail-item"><strong>Setor Proposto:</strong> <span>{{ mp.setor_proposto.nome }}</span></div>
             <div class="detail-item"><strong>Salário Proposto:</strong> <span>R$ {{ mp.salario_proposto|default:"N/A" }}</span></div>
             {# Adicionar Centro Custo Proposto se aplicável #}
-            <div class="detail-item"><strong>Tipo de Movimentação:</strong> <span>{{ mp.get_tipo_movimentacao_display }}</span></div>
             <div class="detail-item"><strong>Data Efetiva:</strong> <span>{{ mp.data_efetiva|date:"d/m/Y" }}</span></div>
             <div class="detail-item"><strong>Justificativa:</strong> <span class="pre-line">{{ mp.justificativa|default:"Nenhuma" }}</span></div>
             {# Mostrar link do Anexo se houver #}
@@ -61,8 +60,15 @@
             {% if mp.status == 'rejeitada' %}
                 <div class="detail-item"><strong>Rejeitado Por:</strong> <span>{{ mp.rejeitado_por.nome|default:"-" }} em {{ mp.data_rejeicao|date:"d/m/Y H:i"|default:"-" }}</span></div>
                 <div class="detail-item"><strong>Observação:</strong> <span class="pre-line" style="color: #dc3545;">{{ mp.observacao_rejeicao|default:"-" }}</span></div>
-            {% elif mp.aprovador_atual %}
-                <div class="detail-item"><strong>Aguardando Aprovação de:</strong> <span>{{ mp.aprovador_atual.nome }}</span></div>
+            {% elif mp.status == 'pendente_gestores' %}
+                {% if not mp.gestor_proposto_aprovou and mp.aprovador_gestor_proposto %}
+                    <div class="detail-item"><strong>Aguardando Gestor Proposto:</strong> <span>{{ mp.aprovador_gestor_proposto.nome }}</span></div>
+                {% endif %}
+                 {% if not mp.gestor_atual_aprovou and mp.aprovador_gestor_atual %}
+                    <div class="detail-item"><strong>Aguardando Gestor Atual:</strong> <span>{{ mp.aprovador_gestor_atual.nome }}</span></div>
+                {% endif %}
+            {% elif mp.status == 'pendente_rh' %}
+                <div class="detail-item"><strong>Aguardando RH:</strong> <span>{{ mp.aprovador_rh.nome|default:"-" }}</span></div>
             {% endif %}
 
             {% if mp.aprovado_por_gestor_proposto %}
@@ -77,13 +83,13 @@
         </div>
 
         {# Seção de Ações (Apenas para o Aprovador Atual) #}
-        {% if pode_aprovar_rejeitar %}
+        {% if pode_aprovar or pode_rejeitar %} {# ✅ CORREÇÃO AQUI #}
         <div class="approval-section">
             <h3>Sua Ação</h3>
             <p>Por favor, analise a solicitação e tome uma ação.</p>
 
             {# Formulário de Rejeição #}
-            <form method="post" action="{% url 'rejeitar_mp' mp.pk %}post/" id="form-rejeitar"> {# Adicionado /post/ #}
+            <form method="post" action="{% url 'rejeitar_mp' mp.pk %}" id="form-rejeitar"> {# REMOVIDO 'post/' do final #}
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="observacao_rejeicao">Observação (Obrigatória para Rejeitar):</label>
@@ -92,18 +98,24 @@
             </form>
 
             {# Formulário de Aprovação (simples) #}
-            <form method="post" action="{% url 'aprovar_mp' mp.pk %}post/" id="form-aprovar"> {# Adicionado /post/ #}
+            <form method="post" action="{% url 'aprovar_mp' mp.pk %}" id="form-aprovar"> {# REMOVIDO 'post/' do final #}
                 {% csrf_token %}
             </form>
 
             {# Botões que acionam os formulários #}
             <div class="approval-actions">
-                <button type="submit" form="form-aprovar" class="btn btn-approve">
-                    <i class="fas fa-check"></i> Aprovar e Encaminhar
-                </button>
-                <button type="submit" form="form-rejeitar" class="btn btn-reject">
-                    <i class="fas fa-times"></i> Rejeitar
-                </button>
+                {# Só mostra o botão de aprovar se 'pode_aprovar' for True #}
+                {% if pode_aprovar %} 
+                    <button type="submit" form="form-aprovar" class="btn btn-approve">
+                        <i class="fas fa-check"></i> Aprovar e Encaminhar
+                    </button>
+                {% endif %}
+                {# Só mostra o botão de rejeitar se 'pode_rejeitar' for True #}
+                {% if pode_rejeitar %}
+                    <button type="submit" form="form-rejeitar" class="btn btn-reject">
+                        <i class="fas fa-times"></i> Rejeitar
+                    </button>
+                {% endif %}
             </div>
         </div>
         {% endif %}

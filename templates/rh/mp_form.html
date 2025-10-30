@@ -102,13 +102,6 @@
                 </div>
 
                 <div class="form-field-group">
-                    <label for="{{ form.tipo_movimentacao.id_for_label }}">{{ form.tipo_movimentacao.label }}</label>
-                    {{ form.tipo_movimentacao }} {# Select2 #}
-                    {% if form.tipo_movimentacao.help_text %}<small class="helptext">{{ form.tipo_movimentacao.help_text }}</small>{% endif %}
-                    {% if form.tipo_movimentacao.errors %}<div class="errorlist">{{ form.tipo_movimentacao.errors }}</div>{% endif %}
-                </div>
-
-                <div class="form-field-group">
                     <label for="{{ form.data_efetiva.id_for_label }}">{{ form.data_efetiva.label }}</label>
                     <input type="date" name="{{ form.data_efetiva.name }}" id="{{ form.data_efetiva.id_for_label }}" {% if form.data_efetiva.value %} value="{{ form.data_efetiva.value|date:'Y-m-d' }}" {% endif %}>
                     {% if form.data_efetiva.help_text %}<small class="helptext">{{ form.data_efetiva.help_text }}</small>{% endif %}
