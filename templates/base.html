@@ -72,13 +72,12 @@
 
                     {% if user.is_authenticated %}
                         {% if funcionario_logado %}
-{% with rp_urls='criar_rp,minhas_rps,listar_rps_para_aprovar,historico_rps,detalhar_rp,editar_rp_rh,aprovar_rp,rejeitar_rp' %}
+                            {% with rp_urls='criar_rp,minhas_rps,listar_rps_para_aprovar,historico_rps,detalhar_rp,editar_rp_rh,aprovar_rp,rejeitar_rp' %}
                             <div class="sidebar-module {% if request.resolver_match.url_name in rp_urls %}open{% endif %}">
                                 <a href="#" class="menu-item module-trigger">
                                     <i class="fas fa-file-signature fa-fw"></i> 
                                     <span class="menu-text">Requisição Pessoal</span>
-                                    <i class="fas fa-chevron-down module-arrow"></i>
-                                </a>
+                                    </a>
                                 <div class="module-content">
                                     {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}
                                         <a href="{% url 'criar_rp' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'criar_rp' %}active{% endif %}">
@@ -100,14 +99,12 @@
                             </div>
                             {% endwith %}
 
-                            {# ✅ LISTA DE URLS ATUALIZADA (incluindo aprovar/rejeitar) #}
                             {% with mp_urls='criar_mp,minhas_mps,listar_mps_para_aprovar,historico_mps,detalhar_mp,aprovar_mp,rejeitar_mp' %}
                             <div class="sidebar-module {% if request.resolver_match.url_name in mp_urls %}open{% endif %}">
                                 <a href="#" class="menu-item module-trigger">
                                     <i class="fas fa-people-arrows fa-fw"></i> 
                                     <span class="menu-text">Movimentação Pessoal</span>
-                                    <i class="fas fa-chevron-down module-arrow"></i>
-                                </a>
+                                    </a>
                                 <div class="module-content">
                                     {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}
                                         <a href="{% url 'criar_mp' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'criar_mp' %}active{% endif %}">
@@ -129,6 +126,32 @@
                             </div>
                             {% endwith %}
 
+                            {% with rd_urls='criar_rd,minhas_rds,listar_rds_para_aprovar,detalhar_rd,aprovar_rd,rejeitar_rd,historico_rds' %}
+                            <div class="sidebar-module {% if request.resolver_match.url_name in rd_urls %}open{% endif %}">
+                                <a href="#" class="menu-item module-trigger">
+                                    <i class="fas fa-user-slash fa-fw"></i> 
+                                    <span class="menu-text">Desligamento</span>
+                                    </a>
+                                <div class="module-content">
+                                    {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 5 %}
+                                        <a href="{% url 'criar_rd' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'criar_rd' %}active{% endif %}">
+                                            <span class="menu-text">Solicitar RD</span>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'minhas_rds' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'minhas_rds' %}active{% endif %}">
+                                        <span class="menu-text">Minhas RDs</span>
+                                    </a>
+                                    {% if user.is_superuser or eh_rh or funcionario_logado.cargo and funcionario_logado.cargo.nivel <= 4 %}
+                                        <a href="{% url 'listar_rds_para_aprovar' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'listar_rds_para_aprovar' %}active{% endif %}">
+                                            <span class="menu-text">Aprovar RDs</span>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'historico_rds' %}" class="menu-item sub-item {% if request.resolver_match.url_name == 'historico_rds' %}active{% endif %}">
+                                        <span class="menu-text">Histórico de RDs</span>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endwith %}
                             {# --- ADMINISTRAÇÃO (Diretor ou Superuser) --- #}
                             {% if user.is_superuser or funcionario_logado.cargo and funcionario_logado.cargo.nivel == 1 %}
                                 <a href="{% url 'gerenciar_cargos' %}" class="menu-item {% if request.resolver_match.url_name == 'gerenciar_cargos' %}active{% endif %}">
@@ -254,8 +277,10 @@
     {# === Bloco para JS específico da página === #}
     {% block extra_js %}
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script> 
-        {# Scripts de páginas filhas serão injetados AQUI via {{ block.super }} #}
+
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        
+        {# Scripts de páginas filhas (como rd_form.html) serão injetados AQUI via {{ block.super }} #}
     {% endblock extra_js %}
 
 </body>

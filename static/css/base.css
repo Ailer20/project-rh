@@ -150,14 +150,24 @@ body {
 /* Menu Items */
 .sidebar .menu-items { display: flex; flex-direction: column; padding-bottom: 20px; }
 .sidebar .menu-item {
-    padding: 12px 25px; text-decoration: none; color: var(--text-sidebar);
-    font-weight: 500; display: flex; align-items: center; gap: 12px;
-    font-size: 15px; border-left: 3px solid transparent; margin-right: 1px;
+    padding: 12px 25px;
+    text-decoration: none;
+    color: var(--text-sidebar);
+    font-weight: 500;
+    display: flex; /* <-- ESTA É A LINHA IMPORTANTE */
+    align-items: center; /* <-- E ESTA */
+    gap: 12px; /* <-- E ESTA */
+    font-size: 15px;
+    border-left: 3px solid transparent;
+    margin-right: 1px;
     transition: background-color 0.2s ease, color 0.2s ease, border-left-color 0.2s ease;
     white-space: nowrap; /* Prevent text wrapping */
 }
 .sidebar .menu-item i {
-    font-size: 18px; width: 20px; text-align: center; color: var(--text-muted);
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+    color: var(--text-muted);
     transition: color 0.2s ease;
     flex-shrink: 0; /* Prevent icon from shrinking */
 }
@@ -294,7 +304,7 @@ body.dark-theme .alert-error {
 }
 
 
-/* --- ✅ NOVO: Estilos do Módulo (Menu Sanfona) --- */
+/* --- Estilos do Módulo (Menu Sanfona) --- */
 .sidebar-module {
     overflow: hidden; /* Essencial para a animação de altura */
 }
@@ -302,7 +312,6 @@ body.dark-theme .alert-error {
 /* O "botão" que abre o módulo */
 .sidebar-module .module-trigger {
     display: flex;
-    justify-content: space-between; /* Alinha o ícone da seta */
     align-items: center;
     cursor: pointer; /* Adiciona cursor de clique */
 }

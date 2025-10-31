@@ -46,6 +46,17 @@ urlpatterns = [
     path('mp/<int:pk>/rejeitar/post/', views.rejeitar_mp_view, name='rejeitar_mp'),
     # ---------------------------------------------------
 
+    # --- ✅ NOVAS URLs PARA REQUISIÇÃO DE DESLIGAMENTO (RD) ---
+    path('rd/nova/', views.RequisicaoDesligamentoCreateView.as_view(), name='criar_rd'),
+    path('rd/minhas/', views.MinhasDesligamentosListView.as_view(), name='minhas_rds'),
+    path('rd/aprovar/', views.AprovarDesligamentosListView.as_view(), name='listar_rds_para_aprovar'),
+    path('rd/<int:pk>/', views.RequisicaoDesligamentoDetailView.as_view(), name='detalhar_rd'),
+    # Funções de ação RD
+    path('rd/<int:pk>/aprovar/post/', views.aprovar_rd_view, name='aprovar_rd'),
+    path('rd/<int:pk>/rejeitar/post/', views.rejeitar_rd_view, name='rejeitar_rd'),
+    path('rd/historico/', views.HistoricoRDListView.as_view(), name='historico_rds'),
+    # -----------------------------------------------------------
+
     # --- Requisições Gerais (Verifique se são as RPs ou outras) ---
     # Se estas views forem para as RPs, você pode querer renomeá-las ou removê-las
     # Se forem para outro tipo de requisição, mantenha-as

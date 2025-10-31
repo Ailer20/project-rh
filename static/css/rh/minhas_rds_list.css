@@ -1,0 +1,207 @@
+/* static/css/rh/minhas_rds_list.css */
+
+/* --- Header da Página --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* --- Botão Principal de Ação --- */
+.btn-add {
+    background-color: var(--bg-sidebar); /* Azul do sistema */
+    color: #FFFFFF;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-add:hover {
+    background-color: #3b5a94; /* Tom mais claro do azul */
+    box-shadow: 0 4px 12px rgba(47, 70, 115, 0.3);
+    transform: translateY(-2px);
+}
+.btn-add i {
+    font-size: 14px;
+}
+
+/* --- Container da Tabela (Card) --- */
+.table-responsive {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 10px 25px 25px 25px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    overflow-x: auto;
+}
+
+/* --- Tabela de Dados --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.data-table thead th {
+    color: var(--text-muted);
+    text-align: left;
+    padding: 20px 15px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--bg-active);
+}
+
+.data-table tbody td {
+    padding: 18px 15px;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.data-table tbody td strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* --- Badges de Status --- */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.status-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Cores dos status PENDENTES */
+.status-pendente_gestor,
+.status-pendente_rh {
+    background-color: #fff8e6;
+    color: #b38600;
+}
+.status-pendente_gestor::before,
+.status-pendente_rh::before {
+    background-color: #ffc107; /* Amarelo */
+}
+
+/* Cor do status APROVADA */
+.status-aprovada {
+    background-color: #e6f7ec;
+    color: #2d8653;
+}
+.status-aprovada::before {
+    background-color: #28a745; /* Verde */
+}
+
+/* Cor do status REJEITADA */
+.status-rejeitada {
+    background-color: #ffebee;
+    color: #b71c1c;
+}
+.status-rejeitada::before {
+    background-color: #dc3545; /* Vermelho */
+}
+
+/* Dark Theme */
+body.dark-theme .status-pendente_gestor,
+body.dark-theme .status-pendente_rh {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #ffdc73;
+}
+body.dark-theme .status-aprovada {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #5ddc83;
+}
+body.dark-theme .status-rejeitada {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #ff8a80;
+}
+
+/* --- Botão de Ação na Tabela --- */
+.btn-action-detail {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.btn-action-detail i {
+    font-size: 13px;
+}
+.btn-action-detail:hover {
+    border-color: var(--bg-sidebar);
+    background-color: var(--bg-active);
+    color: var(--bg-sidebar);
+}
+body.dark-theme .btn-action-detail:hover {
+    color: var(--text-sidebar-hover);
+}
+
+/* --- Estado Vazio --- */
+.no-results {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    border: 1px dashed var(--border-color);
+}
+.no-results::before {
+    content: '\f2e5'; /* Ícone de "user-slash" */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: var(--text-muted);
+    font-size: 40px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* --- Alertas --- */
+.alert { /* ... */ }
+.alert-success { /* ... */ }
+body.dark-theme .alert-success { /* ... */ }
+/* (Copie os estilos de .alert do seu base.css ou outro css se necessário) */

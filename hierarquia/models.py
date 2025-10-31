@@ -680,3 +680,188 @@ class MovimentacaoPessoal(models.Model):
         ordering = ['-criado_em']
 
 
+
+# --- ✅ NOVO MODELO: RequisicaoDesligamento ---
+class RequisicaoDesligamento(models.Model):
+    # --- Status do Fluxo ---
+    STATUS_RD_CHOICES = [
+        ('pendente_gestor', 'Pendente Gestor Imediato'),
+        ('pendente_rh', 'Pendente RH'),
+        ('aprovada', 'Aprovada (Desligamento Efetivado)'),
+        ('rejeitada', 'Rejeitada'),
+    ]
+    TIPO_DESLIGAMENTO_CHOICES = [
+        ('empresa', 'Iniciativa da Empresa'),
+        ('funcionario', 'Iniciativa do Funcionário'),
+    ]
+    MOTIVO_CHOICES = [
+        # Iniciativa da Empresa
+        ('termino_contrato', 'Término de Contrato de Experiência'),
+        ('reducao_quadro', 'Redução de Quadro'),
+        ('baixo_desempenho', 'Baixo Desempenho'),
+        ('justa_causa', 'Justa Causa'),
+        # Iniciativa do Funcionário
+        ('pedido_demissao', 'Pedido de Demissão'),
+        ('abandono_emprego', 'Abandono de Emprego'),
+        ('aposentadoria', 'Aposentadoria'),
+        ('falecimento', 'Falecimento'),
+        # Outros
+        ('outro', 'Outro (Especificar na Justificativa)'),
+    ]
+    TIPO_AVISO_CHOICES = [
+        ('trabalhado', 'Trabalhado'),
+        ('indenizado', 'Indenizado'),
+        ('dispensado', 'Dispensa de Cumprimento'),
+        ('nao_se_aplica', 'Não se Aplica'),
+    ]
+
+    # --- Dados do Solicitante e Funcionário ---
+    solicitante = models.ForeignKey(Funcionario, on_delete=models.PROTECT, related_name='rds_solicitadas', verbose_name="Solicitante (ADM)")
+    funcionario_desligado = models.ForeignKey(Funcionario, on_delete=models.PROTECT, related_name='desligamentos', verbose_name="Funcionário a ser Desligado")
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Data da Solicitação")
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    # --- Dados Atuais (Auto-preenchidos) ---
+    cargo_atual = models.ForeignKey(Cargo, on_delete=models.PROTECT, related_name='+', verbose_name="Cargo Atual", null=True, blank=True)
+    setor_atual = models.ForeignKey(Setor, on_delete=models.PROTECT, related_name='+', verbose_name="Setor Atual", null=True, blank=True)
+    data_admissao = models.DateField(null=True, blank=True, verbose_name="Data de Admissão")
+
+    # --- Detalhes do Desligamento (Preenchidos pelo ADM) ---
+    tipo_desligamento = models.CharField(max_length=20, choices=TIPO_DESLIGAMENTO_CHOICES, verbose_name="Tipo de Desligamento")
+    motivo = models.CharField(max_length=30, choices=MOTIVO_CHOICES, verbose_name="Motivo")
+    data_prevista_desligamento = models.DateField(verbose_name="Data Prevista (Último dia)")
+    tipo_aviso = models.CharField(max_length=20, choices=TIPO_AVISO_CHOICES, verbose_name="Tipo de Aviso Prévio")
+    havera_substituicao = models.BooleanField(default=False, verbose_name="Haverá Substituição?")
+    justificativa = models.TextField(verbose_name="Justificativa / Detalhes")
+
+    # Opcional: Entrevista de Desligamento (pode ser preenchido pelo RH depois)
+    entrevista_realizada = models.BooleanField(default=False, verbose_name="Entrevista de Desligamento Realizada?")
+    data_entrevista = models.DateField(null=True, blank=True, verbose_name="Data da Entrevista")
+
+    # --- Controle de Aprovação ---
+    status = models.CharField(max_length=30, choices=STATUS_RD_CHOICES, verbose_name="Status da Requisição")
+    aprovador_atual = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='rds_para_aprovar', verbose_name="Próximo Aprovador")
+    observacao_rejeicao = models.TextField(blank=True, null=True, help_text="Motivo da rejeição.")
+
+    # --- Histórico ---
+    aprovado_por_gestor = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_gestor = models.DateTimeField(null=True, blank=True)
+    aprovado_por_rh = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_aprovacao_rh = models.DateTimeField(null=True, blank=True)
+    rejeitado_por = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    data_rejeicao = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"RD #{self.id}: Desligamento de {self.funcionario_desligado.nome}"
+
+    # --- Funções Auxiliares ---
+    def _get_gestor_imediato(self, setor):
+        """ 
+        Encontra o Gestor Imediato:
+        1. Tenta Coordenador (Nível 3)
+        2. Se não achar, tenta Gestor (Nível 2)
+        """
+        if not setor:
+            return None
+        
+        setor_q = Q(setor_primario=setor) | Q(setores_responsaveis=setor)
+        
+        try:
+            # 1. Tenta Coordenador (Nível 3)
+            coordenador = Funcionario.objects.filter(
+                Q(cargo__nivel=3), 
+                setor_q,
+                ativo=True
+            ).distinct().first()
+            
+            if coordenador:
+                return coordenador
+
+            # 2. Se não achar, tenta Gestor (Nível 2)
+            gestor = Funcionario.objects.filter(
+                Q(cargo__nivel=2), 
+                setor_q,
+                ativo=True
+            ).distinct().first()
+            
+            return gestor # Retorna o gestor ou None se não encontrar
+            
+        except Funcionario.DoesNotExist:
+            return None
+
+    def _get_rh_approver(self):
+        """ Encontra o aprovador do RH (Copiado/Adaptado). """
+        rh_sector_names = ["RECURSOS HUMANOS", "DEPARTAMENTO DE PESSOAL"]
+        q_objects = Q()
+        for name in rh_sector_names:
+            q_objects |= Q(setor_primario__nome__iexact=name)
+        try:
+            rh_approver = Funcionario.objects.filter(q_objects, ativo=True).order_by('cargo__nivel').first()
+            if rh_approver: return rh_approver
+            return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
+        except Exception:
+            return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
+
+
+    # --- Lógica de Workflow ---
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        if is_new:
+            # Preenche os dados atuais do funcionário
+            self.cargo_atual = self.funcionario_desligado.cargo
+            self.setor_atual = self.funcionario_desligado.setor_primario
+            self.data_admissao = self.funcionario_desligado.data_admissao
+            
+            # Encontra o primeiro aprovador (Gestor Imediato)
+            self.aprovador_atual = self._get_gestor_imediato(self.setor_atual)
+            
+            if self.aprovador_atual:
+                self.status = 'pendente_gestor'
+            else:
+                # Se não encontrar gestor/coordenador, pula direto para o RH
+                self.status = 'pendente_rh'
+                self.aprovador_atual = self._get_rh_approver()
+
+        super().save(*args, **kwargs)
+
+    def avancar_aprovacao(self, aprovador):
+        """ Move a RD para o próximo estágio (Gestor -> RH -> Aprovada) """
+        now = timezone.now()
+
+        # 1. Gestor aprovou
+        if self.status == 'pendente_gestor' and aprovador == self.aprovador_atual:
+            self.aprovado_por_gestor = aprovador
+            self.data_aprovacao_gestor = now
+            # Próximo passo: RH
+            self.status = 'pendente_rh'
+            self.aprovador_atual = self._get_rh_approver()
+            self.save()
+
+        # 2. RH aprovou
+        elif self.status == 'pendente_rh' and aprovador == self.aprovador_atual:
+            self.aprovado_por_rh = aprovador
+            self.data_aprovacao_rh = now
+            # Próximo passo: Fim
+            self.status = 'aprovada'
+            self.aprovador_atual = None
+            self.save()
+            
+            # --- AÇÃO DE DESLIGAMENTO ---
+            # Desativa o funcionário no sistema
+            self.funcionario_desligado.ativo = False
+            self.funcionario_desligado.save()
+            # --------------------------
+
+    def rejeitar(self, aprovador_que_rejeitou, observacao):
+        """ Marca a RD como rejeitada. """
+        self.status = 'rejeitada'
+        self.rejeitado_por = aprovador_que_rejeitou
+        self.data_rejeicao = timezone.now()
+        self.observacao_rejeicao = observacao
+        self.aprovador_atual = None
+        self.save()
+
+    class Meta:
+        verbose_name = "Requisição de Desligamento"
+        verbose_name_plural = "Requisições de Desligamento"
+        ordering = ['-criado_em']
