@@ -1,4 +1,4 @@
-/* static/css/rh/rp_detail.css */
+/* static/css/rh/rd_form.css */
 
 /* --- Header da Página --- */
 .page-header {
@@ -10,252 +10,174 @@
 
 .page-header h1 {
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700; /* Mais forte */
     color: var(--text-primary);
-    line-height: 1.2;
 }
 
-/* --- Card Principal --- */
-.detail-card {
+/* --- Card do Formulário --- */
+.form-card {
     max-width: 900px;
-    margin: 0 auto 30px auto;
+    margin: 0 auto;
     background: var(--bg-primary);
     border-radius: 10px;
-    box-shadow: 0 2px 10px var(--shadow-color);
-    padding: 30px;
+    padding: 35px 40px; /* Mais espaçamento */
+    box-shadow: 0 4px 12px var(--shadow-color); /* Sombra mais forte */
+    border: 1px solid var(--border-color);
 }
 
-/* --- Seções de Detalhes --- */
-.detail-section {
-    margin-bottom: 25px;
-    padding-bottom: 25px;
-    border-bottom: 1px solid var(--border-color); /* Linha linear */
-}
-.detail-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+/* --- Grid para o Formulário --- */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 colunas */
+    gap: 20px 25px; /* Espaço entre linhas e colunas */
 }
 
-.detail-section h3 {
-    font-size: 1.1em;
-    font-weight: 600;
-    color: var(--bg-sidebar); /* Azul do sistema */
-    margin-bottom: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 8px;
-}
-
-/* --- Itens (Chave/Valor) --- */
-.detail-item {
-    display: flex;
-    margin-bottom: 12px;
-    font-size: 15px;
-    line-height: 1.6;
-}
-.detail-item strong {
-    color: var(--text-primary); /* Cor primária */
-    font-weight: 600;
-    width: 220px; /* Largura fixa para o label */
-    flex-shrink: 0;
-    margin-right: 10px;
-}
-.detail-item span {
-    color: var(--text-secondary); /* Cor secundária */
-}
-/* Para spans com quebra de linha (textareas) */
-.detail-item span.pre-line {
-    white-space: pre-line;
-}
-
-
-/* --- Badges de Status (movidos do inline) --- */
-.status-badge {
-    padding: 5px 12px;
-    border-radius: 16px;
-    font-size: 13px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-left: 10px;
-}
-.status-badge::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-.status-pendente_gestor, 
-.status-pendente_rh { 
-    background-color: #fff8e6; color: #b38600;
-}
-.status-pendente_gestor::before, 
-.status-pendente_rh::before { background-color: #ffc107; }
-.status-em_revisao_gestor { 
-    background-color: #fff3e0; color: #e65100;
-}
-.status-em_revisao_gestor::before { background-color: #fd7e14; }
-.status-aprovada { 
-    background-color: #e6f7ec; color: #2d8653; 
-}
-.status-aprovada::before { background-color: #28a745; }
-.status-rejeitada { 
-    background-color: #ffebee; color: #b71c1c; 
-}
-.status-rejeitada::before { background-color: #dc3545; }
-.status-cancelada { 
-    background-color: #f1f3f5; color: #64758C; 
-}
-.status-cancelada::before { background-color: #6c757d; }
-/* Dark Theme */
-body.dark-theme .status-pendente_gestor,
-body.dark-theme .status-pendente_rh { 
-    background-color: rgba(255, 193, 7, 0.2); color: #ffdc73; 
-}
-body.dark-theme .status-em_revisao_gestor { 
-    background-color: rgba(253, 126, 20, 0.2); color: #fdab6a; 
-}
-body.dark-theme .status-aprovada { 
-    background-color: rgba(40, 167, 69, 0.2); color: #5ddc83; 
-}
-body.dark-theme .status-rejeitada { 
-    background-color: rgba(220, 53, 69, 0.2); color: #ff8a80; 
-}
-body.dark-theme .status-cancelada { 
-    background-color: rgba(108, 117, 125, 0.2); color: #a0a0b0; 
-}
-
-/* --- Alerta de Revisão (movido do inline) --- */
-.alert-revisao-rh {
-    background-color: #fff8e6;
-    border: 1px solid #ffeeba;
-    color: #b38600;
-    padding: 15px 20px;
-    border-radius: 6px;
-    margin-bottom: 25px;
-    font-weight: 500;
-}
-.alert-revisao-rh h4 {
-    color: #b38600;
-    font-weight: 700;
-    font-size: 1.1em;
-    margin-bottom: 5px;
-}
-body.dark-theme .alert-revisao-rh {
-    background-color: rgba(255, 193, 7, 0.2);
-    border-color: rgba(255, 193, 7, 0.4);
-    color: #ffdc73;
-}
-body.dark-theme .alert-revisao-rh h4 {
-    color: #ffeb9b;
-}
-
-/* --- Seção de Ação (Aprovar/Rejeitar) --- */
-.approval-section {
-    margin-top: 25px;
-    padding-top: 25px;
-    border-top: 1px solid var(--border-color);
-}
-.approval-section p {
-    font-size: 15px;
-    color: var(--text-secondary);
-    margin-bottom: 20px;
-}
-
-/* Estilos do formulário (textarea) */
-.form-group {
+.form-field-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 20px;
+    gap: 8px; /* Espaço entre label e input */
 }
-.form-group label {
-    color: var(--text-secondary);
+
+/* Campo que ocupa a largura total */
+.form-field-group.full-width {
+    grid-column: 1 / -1; /* Ocupa as 2 colunas */
+}
+
+/* --- Estilos dos Campos (Labels, Inputs, Selects) --- */
+.form-field-group label {
+    color: var(--gray-700); /* ✅ Usando nova variável */
     font-size: 14px;
     font-weight: 600;
 }
-.form-group textarea {
+body.dark-theme .form-field-group label {
+    color: var(--gray-300);
+}
+
+
+/* Estilo unificado para todos os inputs, selects e textareas */
+.form-field-group input[type="text"],
+.form-field-group input[type="number"],
+.form-field-group input[type="date"],
+.form-field-group select,
+.form-field-group textarea {
     width: 100%;
     padding: 12px 15px;
     font-size: 15px;
     color: var(--text-primary);
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background-color: var(--gray-50); /* ✅ Usando --gray-50 */
+    border: 1px solid var(--gray-300); /* ✅ Usando --gray-300 */
     border-radius: 6px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     font-family: inherit;
-    min-height: 100px;
-    resize: vertical;
 }
-.form-group textarea:focus {
-    outline: none;
-    border-color: var(--bg-sidebar);
-    box-shadow: 0 0 0 3px rgba(47, 70, 115, 0.2);
+body.dark-theme .form-field-group input[type="text"],
+body.dark-theme .form-field-group input[type="number"],
+body.dark-theme .form-field-group input[type="date"],
+body.dark-theme .form-field-group select,
+body.dark-theme .form-field-group textarea {
+    background-color: var(--gray-900);
+    border-color: var(--gray-700);
 }
 
-/* Botões de Ação */
-.approval-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 15px;
+.form-field-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
 }
+body.dark-theme .form-field-group select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23d1d5db' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+.form-field-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ✅ --- ESTADO DE FOCO ATUALIZADO --- */
+.form-field-group input[type="text"]:focus,
+.form-field-group input[type="number"]:focus,
+.form-field-group input[type="date"]:focus,
+.form-field-group select:focus,
+.form-field-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color); /* ✅ Corrigido */
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); /* ✅ Corrigido */
+}
+
+/* Erros de Validação */
+.form-field-group .errorlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    color: var(--danger-color); /* ✅ Corrigido */
+    font-weight: 500;
+}
+.form-field-group .helptext {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* --- Ações do Formulário (Botões) --- */
+.form-actions {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end; /* Alinha à direita */
+    gap: 15px;
+}
+
+/* Botão Genérico (base) */
 .btn {
     text-decoration: none;
     padding: 12px 25px;
     border-radius: 6px;
     font-size: 15px;
     font-weight: 600;
-    border: none;
+    border: 1px solid transparent; /* Adicionado para consistência */
     cursor: pointer;
     transition: all 0.2s ease;
-    display: inline-flex;
+    display: inline-flex; /* Para alinhar ícones */
     align-items: center;
     gap: 8px;
 }
-/* Botão Aprovar (Verde) */
-.btn-approve {
-    background-color: #28a745;
-    color: #FFFFFF;
-}
-.btn-approve:hover {
-    background-color: #218838;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-    transform: translateY(-2px);
-}
-/* Botão Rejeitar (Vermelho) */
-.btn-reject {
-    background-color: #dc3545;
-    color: #FFFFFF;
-}
-.btn-reject:hover {
-    background-color: #c82333;
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-    transform: translateY(-2px);
-}
-/* Botão Editar (Azul) */
-.btn-edit-rh {
-    background-color: #007bff;
-    color: #FFFFFF;
-}
-.btn-edit-rh:hover {
-    background-color: #0069d9;
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-    transform: translateY(-2px);
-}
 
-/* Botão de Voltar (no final da página) */
+/* ✅ --- BOTÃO CANCELAR (ATUALIZADO) --- */
 .btn-cancel {
     background: var(--bg-primary);
     color: var(--text-secondary);
-    border: 1px solid var(--border-color);
+    border-color: var(--gray-300); /* ✅ Corrigido */
+}
+body.dark-theme .btn-cancel {
+    color: var(--gray-300);
+    border-color: var(--gray-700);
 }
 .btn-cancel:hover {
-    background-color: var(--bg-secondary);
-    border-color: var(--text-secondary);
+    background-color: var(--gray-50); /* ✅ Corrigido */
+    border-color: var(--gray-500); /* ✅ Corrigido */
     color: var(--text-primary);
+}
+body.dark-theme .btn-cancel:hover {
+    background-color: var(--gray-800);
+    border-color: var(--gray-500);
+    color: var(--text-primary);
+}
+
+/* ✅ --- BOTÃO SALVAR (ATUALIZADO) --- */
+/* Este formulário é perigoso, então usamos a cor de perigo */
+.btn-submit {
+    background: var(--danger-color); /* ✅ Corrigido */
+    color: #FFFFFF;
+    border-color: var(--danger-color);
+}
+.btn-submit:hover {
+    background-color: #b91c1c; /* Tom mais escuro de --danger-color */
+    border-color: #b91c1c;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2); /* ✅ Corrigido */
+    transform: translateY(-2px);
 }

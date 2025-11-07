@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Aprovar Requisições Pessoais" }}{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/aprovar_rps_list.css' %}"> 
+{% endblock extra_css %}
+
+{% block content %}
+<div class="list-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1>{{ titulo_pagina|default:"Requisições Pendentes de Aprovação" }}</h1>
+            <p>Requisições que aguardam sua análise e ação.</p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="table-responsive">
+        {% if requisicoes %}
+            <p class="text-muted">Você tem {{ requisicoes|length }} requisição(ões) aguardando sua análise.</p>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Vaga Solicitada</th>
+                        <th>Solicitante</th>
+                        <th>Setor da Vaga</th>
+                        <th>Data Abertura</th>
+                        <th>Status Atual</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rp in requisicoes %}
+                    <tr>
+                        <td>#{{ rp.id }}</td>
+                        <td><strong>{{ rp.vaga.titulo }}</strong></td>
+                        <td>{{ rp.solicitante.ra_nome }}</td>
+                        <td>{{ rp.vaga.setor.nome|default:"N/A" }}</td>
+                        <td>{{ rp.criado_em|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <span class="status-badge status-{{ rp.status }}">
+                                {{ rp.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhar_rp' rp.pk %}" class="btn-action-analisar">
+                                <i class="fas fa-search-plus"></i> Analisar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+        {% else %}
+            <div class="no-results">
+                <h4>Nenhuma requisição pendente</h4>
+                <p>Não há requisições pessoais pendentes para sua aprovação no momento.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    {# Paginação #}
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; Primeira</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                {% endif %}
+                <span class="current">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock content %}

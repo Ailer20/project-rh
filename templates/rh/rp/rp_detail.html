@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalhes da Requisição Pessoal #{{ rp.id }}{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/rp_detail.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="rp-detail-container">
+    
+    <div class="page-header">
+        <h1>Detalhes da Requisição Pessoal #{{ rp.id }}</h1>
+        <span class="status-badge status-{{ rp.status }}">{{ rp.get_status_display }}</span>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if rp.status == 'em_revisao_gestor' and rp.justificativa_edicao_rh %}
+    <div class="alert-revisao-rh">
+        <h4><i class="fas fa-exclamation-triangle"></i> Atenção: O RH editou esta requisição!</h4>
+        <p>Por favor, revise os detalhes abaixo e aprove ou rejeite novamente.</p>
+        <p><strong>Justificativa do RH:</strong> {{ rp.justificativa_edicao_rh|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+
+    <div class="card detail-card">
+        <div class="detail-section">
+            <h3>Informações da Requisição</h3>
+            <div class="detail-item"><strong>Solicitante:</strong> <span>{{ rp.solicitante.ra_nome }}</span></div>
+            <div class="detail-item"><strong>Data Abertura:</strong> <span>{{ rp.criado_em|date:"d/m/Y H:i" }}</span></div>
+            <div class="detail-item"><strong>Tipo de Vaga:</strong> <span>{{ rp.get_tipo_vaga_display }}</span></div>
+            {% if rp.tipo_vaga == 'substituicao' %}
+            <div class="detail-item"><strong>Nome Substituído:</strong> <span>{{ rp.nome_substituido|default:"Não informado" }}</span></div>
+            <div class="detail-item"><strong>Motivo Substituição:</strong> <span>{{ rp.get_motivo_substituicao_display|default:"Não informado" }}</span></div>
+            {% endif %}
+            <div class="detail-item"><strong>Justificativa:</strong> <span class="pre-line">{{ rp.justificativa_rp|default:"Nenhuma" }}</span></div>
+            <div class="detail-item"><strong>Local Trabalho:</strong> <span>{{ rp.local_trabalho|default:"Não informado" }}</span></div>
+            <div class="detail-item"><strong>Data Prevista Início:</strong> <span>{{ rp.data_prevista_inicio|date:"d/m/Y"|default:"Não informada" }}</span></div>
+            <div class="detail-item"><strong>Prazo Contratação:</strong> <span>{{ rp.prazo_contratacao|date:"d/m/Y"|default:"Não informado" }}</span></div>
+            <div class="detail-item"><strong>Horário Trabalho:</strong> <span>{{ rp.horario_trabalho|default:"Não informado" }}</span></div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Detalhes da Vaga Solicitada</h3>
+            <div class="detail-item"><strong>Título da Vaga:</strong> <span>{{ rp.vaga.titulo }}</span></div>
+            <div class="detail-item"><strong>Setor:</strong> <span>{{ rp.vaga.setor.nome }}</span></div>
+            <div class="detail-item"><strong>Cargo:</strong> <span>{{ rp.vaga.cargo.nome }} (Nível {{ rp.vaga.cargo.nivel }})</span></div>
+            <div class="detail-item"><strong>Tipo Contratação:</strong> <span>{{ rp.vaga.get_tipo_contratacao_display }}</span></div>
+            <div class="detail-item"><strong>Faixa Salarial:</strong> <span>R$ {{ rp.vaga.faixa_salarial_inicial|default:"N/A" }} - R$ {{ rp.vaga.faixa_salarial_final|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Centro de Custo:</strong> <span>{{ rp.vaga.centro_custo|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Formação Acadêmica:</strong> <span class="pre-line">{{ rp.vaga.formacao_academica|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Benefícios:</strong> <span class="pre-line">{{ rp.vaga.beneficios|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Competências Técnicas:</strong> <span class="pre-line">{{ rp.vaga.requisitos_tecnicos|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Competências Comport.:</strong> <span class="pre-line">{{ rp.vaga.requisitos_comportamentais|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Principais Atividades:</strong> <span class="pre-line">{{ rp.vaga.principais_atividades|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Justificativa (Vaga):</strong> <span class="pre-line">{{ rp.vaga.justificativa|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Vaga Criada por:</strong> <span>{{ rp.vaga.criado_por.ra_nome|default:"-" }} em {{ rp.vaga.criado_em|date:"d/m/Y" }}</span></div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Histórico de Aprovação</h3>
+            <div class="detail-item"><strong>Status Atual:</strong> <span>{{ rp.get_status_display }}</span></div>
+            
+            {% if rp.status == 'rejeitada' %}
+                <div class="detail-item"><strong>Rejeitado Por:</strong> <span>{{ rp.rejeitado_por.ra_nome|default:"-" }} em {{ rp.data_rejeicao|date:"d/m/Y H:i"|default:"-" }}</span></div>
+                <div class="detail-item"><strong>Observação:</strong> <span class="pre-line" style="color: #dc3545;">{{ rp.observacao_rejeicao|default:"-" }}</span></div>
+            
+            {% elif rp.aprovador_atual %}
+                <div class="detail-item"><strong>Aguardando Aprovação de:</strong> <span>{{ rp.aprovador_atual.ra_nome }}</span></div>
+            {% endif %}
+
+            {% if rp.aprovado_por_gestor %}
+            <div class="detail-item"><strong>Aprovado por Gestor:</strong> <span>{{ rp.aprovado_por_gestor.ra_nome }} em {{ rp.data_aprovacao_gestor|date:"d/m/Y H:i" }}</span></div>
+            {% endif %}
+            {% if rp.aprovado_por_rh %}
+            <div class="detail-item"><strong>Aprovado por RH:</strong> <span>{{ rp.aprovado_por_rh.ra_nome }} em {{ rp.data_aprovacao_rh|date:"d/m/Y H:i" }}</span></div>
+            {% endif %}
+
+        </div>
+
+        {% if pode_aprovar_rejeitar %}
+        <div class="approval-section">
+            <h3>Sua Ação</h3>
+
+            {% if rp.status == 'pendente_rh' %}
+                <p>Como aprovador de RH, você pode rejeitar diretamente ou analisar/editar a requisição (para aprovar ou devolver ao gestor).</p>
+                <form method="post" action="{% url 'rejeitar_rp' rp.pk %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="observacao_rh">Observação (Obrigatória para Rejeitar):</label>
+                        <textarea name="observacao" id="observacao_rh" rows="3" placeholder="Informe o motivo da rejeição..."></textarea>
+                    </div>
+                    <div class="approval-actions">
+                        <a href="{% url 'editar_rp_rh' rp.pk %}" class="btn btn-edit-rh"><i class="fas fa-edit"></i> Analisar / Editar</a>
+                        <button type="submit" class="btn btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
+                    </div>
+                </form>
+
+            {% elif rp.status == 'pendente_gestor' or rp.status == 'em_revisao_gestor' %}
+                <p>Como gestor/coordenador, você pode aprovar para encaminhar ao RH ou rejeitar esta requisição.</p>
+                
+                <form method="post" action="{% url 'rejeitar_rp' rp.pk %}" id="form-rejeitar">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="observacao_gestor">Observação (Obrigatória para Rejeitar):</label>
+                        <textarea name="observacao" id="observacao_gestor" rows="3" placeholder="Informe o motivo da rejeição..."></textarea>
+                    </div>
+                </form>
+
+                <form method="post" action="{% url 'aprovar_rp' rp.pk %}" id="form-aprovar">
+                    {% csrf_token %}
+                </form>
+
+                <div class="approval-actions">
+                    <button type="submit" form="form-aprovar" class="btn btn-approve"><i class="fas fa-check"></i> Aprovar e Encaminhar ao RH</button>
+                    <button type="submit" form="form-rejeitar" class="btn btn-reject"><i class="fas fa-times"></i> Rejeitar</button>
+                </div>
+
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div> {# Fim do card #}
+
+    <div style="text-align: center; margin-top: 20px;">
+        {% if pode_aprovar_rejeitar %}
+            <a href="{% url 'listar_rps_para_aprovar' %}" class="btn btn-cancel">Voltar para Lista</a>
+        {% else %}
+             <a href="{% url 'minhas_rps' %}" class="btn btn-cancel">Voltar para Minhas RPs</a>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock content %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Minhas Requisições Pessoais{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/minhas_rps_list.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="minhas-rps-container">
+    
+    <div class="page-header">
+        <h1>Minhas Requisições Pessoais</h1>
+        <a href="{% url 'criar_rp' %}" class="btn-add"><i class="fas fa-plus"></i> Abrir Nova RP</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if requisicoes %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Vaga</th>
+                        <th>Tipo</th>
+                        <th>Data Abertura</th>
+                        <th>Status</th>
+                        <th>Próximo Aprovador</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rp in requisicoes %}
+                    <tr>
+                        <td>#{{ rp.id }}</td>
+                        <td><strong>{{ rp.vaga.titulo }}</strong></td>
+                        <td>{{ rp.get_tipo_vaga_display }}</td>
+                        <td>{{ rp.criado_em|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <span class="status-badge status-{{ rp.status }}">
+                                {{ rp.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if rp.aprovador_atual %}
+                                {% comment %} {% endcomment %}
+                                {{ rp.aprovador_atual.ra_nome }}
+                            {% elif rp.status == 'aprovada' %}
+                                <span class="status-aprovada" style="font-weight: 600;">Concluído</span>
+                            {% elif rp.status == 'rejeitada' %}
+                                <span class="status-rejeitada" style="font-weight: 600;">Rejeitado</span>
+                            {% elif rp.status == 'cancelada' %}
+                                <span class="status-cancelada" style="font-weight: 600;">Cancelado</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhar_rp' rp.pk %}" class="btn-action-detail"><i class="fas fa-eye"></i> Detalhes</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="no-results">
+            <h4>Nenhuma Requisição Encontrada</h4>
+            <p>Você ainda não abriu nenhuma Requisição Pessoal.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock content %}

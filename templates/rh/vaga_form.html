@@ -80,3 +80,19 @@
     </div>
 </div>
 {% endblock content %}
+{% block extra_js %}
+    {{ block.super }} {# Isso carrega o jQuery e o select2.min.js do base.html #}
+    
+    <script>
+        $(document).ready(function() {
+            // ✅ Esta é a linha que ativa o Select2
+            
+            // Aplica o Select2 a todos os <select> dentro do seu formulário
+            $('.form-grid select').select2({
+                // Isso faz com que o Select2 use as cores do seu tema
+                // que você já definiu no <style>
+                theme: "default" 
+            });
+        });
+    </script>
+{% endblock extra_js %}

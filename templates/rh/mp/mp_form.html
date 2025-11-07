@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Solicitar Movimentação Pessoal" }}{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/mp_form.css' %}">
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        .select2-container--default .select2-selection--single {
+            background-color: var(--bg-secondary); border: 1px solid var(--border-color);
+            height: 47px; padding: 8px 0; border-radius: 6px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-primary); line-height: 28px; padding-left: 15px; padding-right: 20px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 45px; right: 5px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: var(--text-secondary) transparent transparent transparent; margin-top: 4px;
+        }
+        .select2-dropdown {
+            background-color: var(--bg-primary); border: 1px solid var(--border-color);
+            box-shadow: 0 4px 10px var(--shadow-color); border-radius: 6px;
+        }
+        .select2-search--dropdown .select2-search__field {
+            background-color: var(--bg-secondary); border: 1px solid var(--border-color);
+            color: var(--text-primary); border-radius: 4px; margin: 5px;
+        }
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: var(--bg-sidebar); color: var(--text-sidebar-hover);
+        }
+        .select2-results__option { padding: 10px 15px; }
+
+        /* Estilo para mostrar dados atuais (opcional) */
+        .current-info {
+            background-color: var(--bg-secondary);
+            border: 1px dashed var(--border-color);
+            padding: 15px;
+            margin-top: 5px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .current-info strong { color: var(--text-primary); }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="mp-form-container">
+
+    <div class="page-header">
+        <h1>{{ titulo_pagina|default:"Solicitar Movimentação Pessoal" }}</h1>
+    </div>
+
+    <div class="card form-card">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+
+                <div class="form-field-group full-width">
+                    <label for="{{ form.funcionario_movido.id_for_label }}">{{ form.funcionario_movido.label }}</label>
+                    {{ form.funcionario_movido }} {# Select2 será aplicado via JS #}
+                    <div id="current-funcionario-info" class="current-info" style="display: none;">
+                        <strong>Cargo Atual:</strong> <span id="current-cargo"></span><br>
+                        <strong>Setor Atual:</strong> <span id="current-setor"></span><br>
+                        {# <strong>Salário Atual:</strong> <span id="current-salario"></span> #}
+                    </div>
+                    {% if form.funcionario_movido.help_text %}<small class="helptext">{{ form.funcionario_movido.help_text }}</small>{% endif %}
+                    {% if form.funcionario_movido.errors %}<div class="errorlist">{{ form.funcionario_movido.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.cargo_proposto.id_for_label }}">{{ form.cargo_proposto.label }}</label>
+                    {{ form.cargo_proposto }} {# Select2 #}
+                    {% if form.cargo_proposto.help_text %}<small class="helptext">{{ form.cargo_proposto.help_text }}</small>{% endif %}
+                    {% if form.cargo_proposto.errors %}<div class="errorlist">{{ form.cargo_proposto.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.setor_proposto.id_for_label }}">{{ form.setor_proposto.label }}</label>
+                    {{ form.setor_proposto }} {# Select2 #}
+                    {% if form.setor_proposto.help_text %}<small class="helptext">{{ form.setor_proposto.help_text }}</small>{% endif %}
+                    {% if form.setor_proposto.errors %}<div class="errorlist">{{ form.setor_proposto.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.salario_proposto.id_for_label }}">{{ form.salario_proposto.label }}</label>
+                    {{ form.salario_proposto }}
+                    {% if form.salario_proposto.help_text %}<small class="helptext">{{ form.salario_proposto.help_text }}</small>{% endif %}
+                    {% if form.salario_proposto.errors %}<div class="errorlist">{{ form.salario_proposto.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.data_efetiva.id_for_label }}">{{ form.data_efetiva.label }}</label>
+                    <input type="date" name="{{ form.data_efetiva.name }}" id="{{ form.data_efetiva.id_for_label }}" {% if form.data_efetiva.value %} value="{{ form.data_efetiva.value|date:'Y-m-d' }}" {% endif %}>
+                    {% if form.data_efetiva.help_text %}<small class="helptext">{{ form.data_efetiva.help_text }}</small>{% endif %}
+                    {% if form.data_efetiva.errors %}<div class="errorlist">{{ form.data_efetiva.errors }}</div>{% endif %}
+                </div>
+
+                {# Espaço vazio na grid, apenas para alinhar #}
+                <div class="form-field-group"></div>
+
+                <div class="form-field-group full-width">
+                    <label for="{{ form.justificativa.id_for_label }}">{{ form.justificativa.label }}</label>
+                    {{ form.justificativa }}
+                    {% if form.justificativa.help_text %}<small class="helptext">{{ form.justificativa.help_text }}</small>{% endif %}
+                    {% if form.justificativa.errors %}<div class="errorlist">{{ form.justificativa.errors }}</div>{% endif %}
+                </div>
+
+                 {# Descomente se adicionar anexo #}
+                 {# <div class="form-field-group full-width"> #}
+                 {#    <label for="{{ form.anexo.id_for_label }}">{{ form.anexo.label }}</label> #}
+                 {#    {{ form.anexo }} #}
+                 {#    {% if form.anexo.help_text %}<small class="helptext">{{ form.anexo.help_text }}</small>{% endif %} #}
+                 {#    {% if form.anexo.errors %}<div class="errorlist">{{ form.anexo.errors }}</div>{% endif %} #}
+                 {# </div> #}
+
+            </div>
+
+            <div class="form-actions">
+                 {# Botão cancelar volta para Minhas MPs #}
+                <a href="{% url 'minhas_mps' %}" class="btn btn-cancel">Cancelar</a>
+                <button type="submit" class="btn btn-submit">
+                    <i class="fas fa-paper-plane"></i> Enviar para Aprovação
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+    {# 1. Carrega o jQuery (do base.html) #}
+    {{ block.super }}
+
+    {# 2. Carrega o Select2 JS (DEPOIS do jQuery) #}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    {# 3. Script da página (Executa DEPOIS de ambos) #}
+    <script>
+        $(document).ready(function() {
+            console.log("Script mp_form.html iniciado (versão com includes locais revisada)");
+
+            // --- Inicializa o Select2 ---
+            var $selects = $('.form-grid select');
+            if ($selects.length > 0) {
+                if ($.fn.select2) {
+                    console.log("Inicializando Select2 para", $selects.length, "select(s)");
+                    try {
+                        $selects.select2({
+                            width: '100%',
+                            placeholder: "Selecione...",
+                            allowClear: true
+                        });
+                        console.log("Select2 inicializado com sucesso.");
+                    } catch (e) {
+                        console.error("Erro ao inicializar Select2:", e);
+                    }
+                } else {
+                    console.error("Erro: Função $.fn.select2 não encontrada! O Select2 JS não carregou corretamente?");
+                }
+            } else {
+                 console.log("Nenhum elemento select encontrado em .form-grid para inicializar o Select2");
+            }
+
+            // --- Opcional: Lógica para buscar e mostrar dados atuais do funcionário ---
+            const funcionarioSelect = $('#id_funcionario_movido');
+            const infoDiv = $('#current-funcionario-info');
+            const cargoSpan = $('#current-cargo');
+            const setorSpan = $('#current-setor');
+            // const salarioSpan = $('#current-salario');
+
+             if (funcionarioSelect.length === 0) {
+                console.error("Não foi possível encontrar o elemento select #id_funcionario_movido!");
+             }
+             if (infoDiv.length === 0) {
+                 console.error("Não foi possível encontrar o elemento div #current-funcionario-info!");
+             }
+
+
+            funcionarioSelect.on('change', function() {
+                const funcionarioId = $(this).val();
+                console.log("Funcionário selecionado:", funcionarioId); // Log
+                if (funcionarioId) {
+                    // --- PLACEHOLDER PARA LÓGICA AJAX ---
+                    // $.ajax({ url: `/api/funcionario/${funcionarioId}/details/`, ... });
+                    console.log("ID selecionado, mas AJAX está desativado. Escondendo infoDiv.");
+                    infoDiv.hide();
+                    // --- FIM PLACEHOLDER ---
+
+                } else {
+                    console.log("Nenhum funcionário selecionado. Escondendo infoDiv.");
+                    infoDiv.hide(); // Esconde se nenhum funcionário for selecionado
+                }
+            });
+
+            // Garante que o div de info esteja escondido no carregamento inicial se nada estiver selecionado
+            if (!funcionarioSelect.val()) {
+                infoDiv.hide();
+            } else {
+                // Se houver valor inicial, poderia disparar o change para buscar dados
+                // funcionarioSelect.trigger('change');
+            }
+             console.log("Configuração do script mp_form.html finalizada");
+        });
+    </script>
+{% endblock extra_js %}

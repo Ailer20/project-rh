@@ -9,62 +9,80 @@
 
 {% block content %}
 <div class="container">
-    <div class="header">
-        {# Mostra o nome do setor no título #}
-        <h2>Funcionários - Setor: {{ setor.nome }}</h2>
-        {# Permissão para adicionar #}
-        {% if perms.hierarquia.add_funcionario %}
-            {# Opcional: Passar setor_id para pré-selecionar no form #}
-            <a href="{% url 'cadastrar_funcionario' %}?setor_id={{ setor.id }}" class="btn">+ Novo Funcionário</a>
-        {% endif %}
+    
+    <div class="header-bar">
+        <div class="header-content">
+            <h2>Setor: {{ setor.nome }}</h2>
+            <p>Lista de funcionários ativos no setor.</p>
+        </div>
+        <div class="header-actions">
+            {% if perms.hierarquia.add_funcionario %}
+                <a href="{% url 'cadastrar_funcionario' %}?setor_id={{ setor.id }}" class="btn-primary">
+                    <i class="fas fa-plus"></i> Novo Funcionário
+                </a>
+            {% endif %}
+            <a href="{% url 'listar_setores_funcionarios' %}" class="btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para Setores
+            </a>
+        </div>
     </div>
 
     <div class="search-box">
         <form method="GET">
+            <i class="fas fa-search"></i>
             <input type="text" name="busca" placeholder="Buscar por nome neste setor..." value="{{ busca }}">
-            <button type="submit">🔍 Buscar</button>
+            <button type="submit">Buscar</button>
         </form>
     </div>
 
-    {% if funcionarios %}
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>CPF</th>
-                    <th>Cargo</th>
-                    {# Não precisa mais mostrar setor aqui, já estamos filtrados #}
-                    <th>Data Admissão</th>
-                    <th>Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for func in funcionarios %}
-                <tr>
-                    <td><strong>{{ func.nome }}</strong></td>
-                    <td>{{ func.cpf }}</td>
-                    <td><span class="cargo-badge">{{ func.cargo.nome }}</span></td>
-                    {# Removida a célula de setores #}
-                    <td>{{ func.data_admissao|date:"d/m/Y" }}</td>
-                    <td>
-                        <a href="{% url 'detalhar_funcionario' func.id %}" class="action-link">Ver Detalhes →</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="table-container">
-        <div class="empty-state">
-            <div class="empty-state-icon">👤</div>
-            <p>Nenhum funcionário encontrado neste setor{% if busca %} para "{{ busca }}"{% endif %}.</p>
+    {% if funcionarios_list %}
+    <div class="profile-grid">
+        {% for item in funcionarios_list %}
+        {% with func=item.obj %} {# <--- Pega o objeto 'func' de dentro do item #}
+        <div class="profile-card">
+            
+            <div class="profile-card-header">
+                <div class="profile-avatar">
+                    <span>{{ func.ra_nome|make_list|first|first }}{{ func.ra_nome|make_list|last|first }}</span>
+                </div>
+                <div class="profile-info">
+                    <h3 class="profile-name">{{ func.ra_nome|title }}</h3>
+                    <p class="profile-cargo">{{ func.cargo.nome|title }}</p>
+                </div>
+            </div>
+            
+            <div class="profile-card-body">
+                <div class="info-item">
+                    <i class="fas fa-id-card-alt"></i>
+                    <span><strong>CPF:</strong> {{ func.ra_cpf|default:"Não informado" }}</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span><strong>Admissão:</strong> {{ item.data_admissao_formatada }}</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-building"></i>
+                    <span><strong>Centro Custo:</strong> {{ func.ra_centro_custo|default:"N/A" }}</span>
+                </div>
+            </div>
+            
+            <div class="profile-card-footer">
+                <a href="{% url 'detalhar_funcionario' func.id %}" class="btn-secondary-outline">
+                    Ver Detalhes
+                </a>
+            </div>
         </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <div class="card empty-state">
+        <div class="empty-state-icon"><i class="fas fa-user-times"></i></div>
+        <h3>Nenhum funcionário encontrado</h3>
+        <p>Não há funcionários neste setor{% if busca %} com o nome "{{ busca }}"{% endif %}.</p>
     </div>
     {% endif %}
 
-    {# Link para voltar à lista de setores #}
-    <a href="{% url 'listar_setores_funcionarios' %}" class="btn" style="margin-top: 20px;">← Voltar para Setores</a>
 </div>
 {% endblock content %}

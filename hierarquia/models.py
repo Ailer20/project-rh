@@ -8,6 +8,9 @@ from django.http import HttpResponseForbidden
 from django.core.validators import RegexValidator
 from django.db.models import Q
 from django.utils import timezone
+from .models_funcionario import Funcionario
+from datetime import datetime
+
 # Validadores
 cpf_validator = RegexValidator(
     regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
@@ -219,21 +222,33 @@ class RequisicaoPessoal(models.Model):
 
     # --- 5. LÓGICA DE APROVADOR INICIAL (CORRIGIDA) ---
     def set_initial_approver(self):
-        """Define o status e o aprovador inicial ao criar a RP."""
+        """
+        Define o status e o aprovador inicial ao criar a RP.
+        Fluxo: Coordenador (3) -> Gestor (2) -> RH.
+        """
         # Usa a função `obter_superiores()` que JÁ EXISTE E FUNCIONA
         superiores = self.solicitante.obter_superiores()
         
-        # Tenta encontrar o Coordenador (Nível 3) ou Gestor (Nível 2)
-        # Níveis 2=Gestor, 3=Coordenador
-        gestor_ou_coordenador = superiores.filter(cargo__nivel__in=[2, 3]).order_by('cargo__nivel').first()
+        # 1. Tenta encontrar o Coordenador (Nível 3) primeiro
+        coordenador = superiores.filter(cargo__nivel=3).first()
 
-        if gestor_ou_coordenador:
-            self.aprovador_atual = gestor_ou_coordenador
+        if coordenador:
+            # Encontrou o Coordenador, define ele
+            self.aprovador_atual = coordenador
             self.status = 'pendente_gestor'
         else:
-            # Se não achar Gestor (ex: um gestor abriu a RP), vai direto pro RH
-            self.aprovador_atual = self.get_rh_approver()
-            self.status = 'pendente_rh'
+            # 2. Se não achou Coordenador, tenta encontrar o Gestor (Nível 2)
+            gestor = superiores.filter(cargo__nivel=2).first()
+            
+            if gestor:
+                # Encontrou o Gestor, define ele
+                self.aprovador_atual = gestor
+                self.status = 'pendente_gestor'
+            else:
+                # 3. Se não achar Coordenador NEM Gestor (ex: um gestor abriu a RP), 
+                # vai direto pro RH
+                self.aprovador_atual = self.get_rh_approver()
+                self.status = 'pendente_rh'
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -361,7 +376,7 @@ class MovimentacaoPessoal(models.Model):
 
 
     def __str__(self):
-        return f"MP #{self.id}: {self.funcionario_movido.nome} para {self.cargo_proposto.nome}"
+        return f"MP #{self.id}: {self.funcionario_movido.ra_nome} para {self.cargo_proposto.nome}"  
 
     # --- 3. Funções Auxiliares ATUALIZADAS (Corrigidas) ---
     def _get_gestor_setor(self, setor):
@@ -569,7 +584,7 @@ class RequisicaoDesligamento(models.Model):
     data_rejeicao = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"RD #{self.id}: Desligamento de {self.funcionario_desligado.nome}"
+        return f"RD #{self.id}: Desligamento de {self.funcionario_desligado.ra_nome}"
 
     # --- Funções Auxiliares ---
     def _get_gestor_imediato(self, setor):
@@ -620,6 +635,27 @@ class RequisicaoDesligamento(models.Model):
             return Funcionario.objects.filter(cargo__nivel=1, ativo=True).first()
 
 
+    def _parse_protheus_date(self, protheus_date_str):
+        """
+        Converte uma data string do Protheus (assumindo YYYYMMDD ou DD/MM/YYYY) 
+        para um objeto date.
+        """
+        if not protheus_date_str:
+            return None
+        
+        # Tenta o formato YYYYMMDD (comum no Protheus)
+        if len(protheus_date_str) == 8:
+            try:
+                return datetime.strptime(protheus_date_str, '%Y%m%d').date()
+            except ValueError:
+                pass # Tenta o próximo formato
+
+        # Tenta o formato DD/MM/YYYY
+        try:
+            return datetime.strptime(protheus_date_str, '%d/%m/%Y').date()
+        except ValueError:
+            return None # Retorna None se tudo falhar
+
     # --- Lógica de Workflow ---
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -627,7 +663,13 @@ class RequisicaoDesligamento(models.Model):
             # Preenche os dados atuais do funcionário
             self.cargo_atual = self.funcionario_desligado.cargo
             self.setor_atual = self.funcionario_desligado.setor_primario
-            self.data_admissao = self.funcionario_desligado.data_admissao
+            
+            # --- ✅ CORREÇÃO AQUI ---
+            # 1. Busca o campo de texto 'ra_data_admis' do funcionário
+            protheus_data_str = self.funcionario_desligado.ra_data_admis
+            # 2. Converte a string para um objeto date
+            self.data_admissao = self._parse_protheus_date(protheus_data_str)
+            # --- FIM DA CORREÇÃO ---
             
             # Encontra o primeiro aprovador (Gestor Imediato)
             self.aprovador_atual = self._get_gestor_imediato(self.setor_atual)

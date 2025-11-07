@@ -1,73 +1,200 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load rh_tags %} {# Garante que a tag is_rh_or_dp está carregada #}
 
-{% block title %}Dashboard - Sistema de Hierarquia{% endblock title %}
-{# {% block extra_css %}
+{% block title %}Dashboard - Sistema RH{% endblock title %}
+
+{% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-{% endblock extra_css %} #}
-{% block content %}
-<div class="container">
-    <div class="header">
-        <h2>Bem-vindo, {{ funcionario.nome }}!</h2> 
-        <p>Gerencie funcionários, requisições e configure a hierarquia organizacional</p>
-    </div>
+{% endblock extra_css %}
 
-    <div class="cards-grid">
-        <div class="card">
-            {% if funcionario.cargo.nivel == 1 %}
-                <div class="card-title">Total de Funcionários</div>
-            {% elif funcionario.cargo.nivel <= 3 %}
-                <div class="card-title">Funcionários nos Setores Resp.</div>
-            {% else %}
-                 <div class="card-title">Funcionários no Setor</div>
-            {% endif %}
-            <div class="card-value">{{ total_funcionarios }}</div> {# Usa a variável calculada na view #}
-        </div>
-        <div class="card">
-            {% if funcionario.cargo.nivel == 1 %}
-                <div class="card-title">Total de Cargos</div>
-            {% elif funcionario.cargo.nivel <= 3 %}
-                <div class="card-title">Cargos nos Setores Resp.</div>
-            {% else %}
-                 <div class="card-title">Cargos no Setor</div>
-            {% endif %}
-            <div class="card-value">{{ total_cargos }}</div> {# Usa a variável calculada na view #}
-        </div>
-        <div class="card">
-            <div class="card-title">{{ setores_titulo_card }}</div>
-            <div class="card-value {% if is_setor_name %}text-value{% endif %}">
-                {{ setores_valor_card }}
+{% block content %}
+<div class="header">
+    <h2>Bem-vindo, {{ funcionario.ra_nome|default:user.username }}!</h2>
+    <p>Este é o seu painel de controle central para todas as atividades de RH.</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-main">
+        
+        {# --- CARDS DE MÉTRICAS --- #}
+        <div class="cards-grid">
+            
+            <div class="card card-funcionarios">
+                <div class="card-content">
+                    {% if funcionario.cargo.nivel == 1 %}
+                        <div class="card-title">Total de Funcionários</div>
+                    {% else %}
+                        <div class="card-title">Funcionários na sua Gestão</div>
+                    {% endif %}
+                    <div class="card-value">{{ total_funcionarios }}</div>
+                </div>
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+
+            <div class="card card-vagas">
+                <div class="card-content">
+                    <div class="card-title">Vagas Abertas</div>
+                    <div class="card-value">{{ vagas_abertas_count }}</div>
+                </div>
+                <div class="card-icon">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+            </div>
+
+            <div class="card card-setores">
+                <div class="card-content">
+                    <div class="card-title">{{ setores_titulo_card }}</div>
+                    <div class="card-value {% if is_setor_name %}text-value{% endif %}">
+                        {{ setores_valor_card }}
+                    </div>
+                </div>
+                <div class="card-icon">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+            </div>
+
+            <div class="card card-pendencias">
+                <div class="card-content">
+                    <div class="card-title">Minhas Pendências</div>
+                    <div class="card-value">{{ minhas_pendencias_count }}</div>
+                </div>
+                <div class="card-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div> 
+        
+        {# --- PERFIL E GRÁFICOS --- #}
+        <div class="charts-grid">
+            
+            <div class="card profile-box">
+                <h3>Meu Perfil</h3>
+                <p><strong>Nome:</strong> {{ funcionario.ra_nome }}</p>
+                <p><strong>Cargo:</strong> {{ funcionario.cargo.nome }}</p>
+                <p><strong>Setor:</strong> 
+                    {% if funcionario.setor_primario %}
+                        {{ funcionario.setor_primario.nome }}
+                    {% else %}
+                        <span style="color: #999;">Nenhum</span>
+                    {% endif %}
+                </p>
+                <p><strong>Data de Admissão:</strong> {{ data_admissao_formatada }}</p>
+            </div>
+
+
+            <div class="chart-container card">
+                <h3>Status das Requisições (Total)</h3>
+                <canvas id="reqStatusChart"></canvas>
             </div>
         </div>
-        <div class="card">
-             <div class="card-title">Requisições Pendentes</div>
-            <div class="card-value">{{ requisicoes_pendentes }}</div> {# Usa a variável calculada na view #}
-        </div>
-    </div>
+    </div> 
+    
+    {# --- SIDEBAR --- #}
+    <div class="dashboard-sidebar">
 
-    <div class="info-box">
-        <h3>Informações do Seu Perfil</h3>
-        <p><strong>Nome:</strong> {{ funcionario.nome }}</p> 
-        <p><strong>Cargo:</strong> {{ funcionario.cargo.nome }} <span class="badge">Nível {{ funcionario.cargo.nivel }}</span></p>
-        <p><strong>Setor:</strong> 
-            {% if funcionario.setor_primario %}
-                {{ funcionario.setor_primario.nome }}
+        <div class="card quick-actions">
+            <h3>Ações Rápidas</h3>
+            {% is_rh_or_dp funcionario as eh_rh %}
+            {% if user.is_superuser or eh_rh or funcionario.cargo and funcionario.cargo.nivel <= 5 %}
+                <a href="{% url 'criar_rp' %}" class="btn-action">
+                    <i class="fas fa-file-signature"></i> Abrir Requisição Pessoal
+                </a>
+                <a href="{% url 'criar_mp' %}" class="btn-action">
+                    <i class="fas fa-people-arrows"></i> Solicitar Movimentação
+                </a>
+                <a href="{% url 'criar_rd' %}" class="btn-action">
+                    <i class="fas fa-user-slash"></i> Solicitar Desligamento
+                </a>
             {% else %}
-                <span style="color: #999;">Nenhum</span> {# Ou deixe em branco #}
+                <p>Você não tem permissão para iniciar requisições.</p>
             {% endif %}
-        </p>
-        {# Opcional: Mostrar setores responsáveis também #}
-        {% if funcionario.setores_responsaveis.exists %}
-        <p><strong>Setores Responsáveis:</strong>
-            {% for setor_resp in funcionario.setores_responsaveis.all %}
-                {{ setor_resp.nome }}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-        </p>
-        {% endif %}
-        <p><strong>Data de Admissão:</strong> {{ funcionario.data_admissao|date:"d/m/Y" }}</p>
-        {% if funcionario.centro_servico %}
-        <p><strong>Centro de Serviço:</strong> {{ funcionario.centro_servico.nome }}</p>
-        {% endif %}
-    </div>
-</div>
+        </div>
+
+        <div class="card pending-list">
+            <h3><i class="fas fa-clock" style="color: var(--accent-color-orange);"></i> Aguardando sua Aprovação</h3>
+            <ul>
+                {% for item in minhas_pendencias_lista %}
+                    <li>
+                        <a href="{{ item.get_absolute_url }}">
+                            <strong>{{ item.tipo }}: #{{ item.id }}</strong>
+                            <span>{{ item.descricao|truncatewords:5 }}</span>
+                            <span class="badge-tipo">{{ item.get_status_display }}</span>
+                        </a>
+                    </li>
+                {% empty %}
+                    <li>
+                        <span class="empty-list">
+                            <i class="fas fa-check-circle"></i>
+                            Tudo certo! Nenhuma pendência para você.
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{% url 'listar_rps_para_aprovar' %}" class="view-all">Ver todas</a>
+        </div>
+
+    </div> 
+</div> 
 {% endblock content %}
+
+
+{% block extra_js %}
+{{ block.super }} 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- Função para obter o valor de uma variável CSS ---
+    function getCssVariable(variable) {
+        return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+    }
+
+    // --- DADOS REAIS VINDO DA VIEW ---
+    const setorData = {{ setor_chart_data|safe }};
+    const reqStatusData = {{ req_status_chart_data|safe }};
+
+    // --- Configurações Comuns de Gráfico ---
+    const chartFontColor = document.body.classList.contains('dark-theme') ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)';
+    const cardBgColor = getCssVariable('--bg-primary');
+    
+    Chart.defaults.color = chartFontColor;
+    Chart.defaults.borderColor = cardBgColor;
+
+    // --- Gráfico de Status de Requisições (Rosca/Donut) ---
+    const ctxReqStatus = document.getElementById('reqStatusChart');
+    if (ctxReqStatus && reqStatusData && reqStatusData.labels.length > 0) {
+        new Chart(ctxReqStatus, {
+            type: 'doughnut',
+            data: {
+                labels: reqStatusData.labels,
+                datasets: [{
+                    label: 'Requisições',
+                    data: reqStatusData.data,
+                    backgroundColor: [
+                        getCssVariable('--warning-color'), // Pendente (Laranja)
+                        getCssVariable('--success-color'),  // Aprovada (Verde)
+                        getCssVariable('--danger-color')  // Rejeitada (Vermelho)
+                    ],
+                    borderColor: cardBgColor,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { padding: 15, color: chartFontColor }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+{% endblock extra_js %}

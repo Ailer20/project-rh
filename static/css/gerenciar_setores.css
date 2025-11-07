@@ -1,87 +1,240 @@
-/* Container específico para esta página */
-.container {
-    max-width: 1000px; /* Largura para a tabela */
-    margin: 40px auto;
-    padding: 0 20px;
+/* static/css/rh/gerenciar_setores.css */
+
+.management-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
 }
 
-/* Estilos do cabeçalho da página */
-.header {
+/* --- CABEÇALHO --- */
+.page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 20px;
 }
-
-.header h2 {
+.header-content h1 {
     font-size: 28px;
+    color: var(--text-primary);
+    margin: 0 0 5px 0;
+}
+.header-content p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0;
 }
 
-/* Estilos gerais para tabelas (Reutilizados de gerenciar_cargos.css - poderiam ir para base_styles.css) */
+/* --- BOTÕES (reutilizáveis) --- */
+.btn-primary, .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-primary {
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+    width: 100%; /* Faz o botão de salvar ocupar o card */
+    justify-content: center;
+}
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+.btn-secondary {
+    background-color: var(--gray-200);
+    color: var(--gray-700);
+}
+.btn-secondary:hover {
+    background-color: var(--gray-300);
+}
+body.dark-theme .btn-secondary {
+    background-color: var(--gray-700);
+    color: var(--gray-100);
+}
+body.dark-theme .btn-secondary:hover {
+    background-color: var(--gray-600);
+}
+
+
+/* --- LAYOUT DO GRID --- */
+.management-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 66% para lista, 33% para form */
+    gap: 30px;
+}
+
+.management-content h2,
+.management-sidebar h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+}
+
+/* --- ESTILO DA TABELA (Coluna Esquerda) --- */
 .table-container {
-    background: white;
+    background: var(--bg-primary);
     border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden; /* Para o border-radius funcionar com a tabela */
+    box-shadow: 0 2px 5px var(--shadow-color);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
 }
 
 table {
     width: 100%;
-    border-collapse: collapse; /* Remove espaços entre células */
+    border-collapse: collapse;
 }
 
 thead {
-    background: #f5f7fa; /* Fundo cinza claro para cabeçalho */
-    border-bottom: 2px solid #e0e0e0;
+    background: var(--gray-50);
+}
+body.dark-theme thead {
+    background: var(--gray-900);
 }
 
 th {
-    padding: 15px;
+    padding: 15px 20px;
     text-align: left;
     font-weight: 600;
-    color: #666;
+    color: var(--text-secondary);
     text-transform: uppercase;
     font-size: 12px;
     letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 td {
-    padding: 15px;
-    border-bottom: 1px solid #e0e0e0; /* Linha separadora entre linhas */
-    vertical-align: top;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    color: var(--text-secondary);
+}
+td strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 15px;
 }
 
-/* Remove borda da última linha */
 tbody tr:last-child td {
     border-bottom: none;
 }
-
 tbody tr:hover {
-    background: #f9f9f9; /* Fundo leve ao passar o mouse */
+    background: var(--gray-50);
+}
+body.dark-theme tbody tr:hover {
+    background: var(--gray-800);
 }
 
-/* Estado vazio para a tabela */
+/* --- ESTILO DO FORMULÁRIO (Coluna Direita) --- */
+.form-card {
+    padding: 25px;
+    border: 1px solid var(--border-color);
+}
+.form-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espaço entre os campos */
+}
+.form-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.form-field-group label {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+}
+/* Estilo unificado (copiado do vaga_form.css) */
+.form-field-group input[type="text"],
+.form-field-group select,
+.form-field-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 15px;
+    color: var(--text-primary);
+    background-color: var(--gray-50);
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+}
+body.dark-theme .form-field-group input[type="text"],
+body.dark-theme .form-field-group select,
+body.dark-theme .form-field-group textarea {
+    background-color: var(--gray-900);
+    border-color: var(--gray-700);
+}
+
+.form-field-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+}
+body.dark-theme .form-field-group select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23d1d5db' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+.form-field-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-field-group input[type="text"]:focus,
+.form-field-group select:focus,
+.form-field-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.form-actions {
+    margin-top: 10px; /* Menor margem, já tem gap */
+}
+
+/* --- ESTADO VAZIO --- */
 .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px;
     text-align: center;
-    padding: 40px;
-    color: #999;
+}
+.empty-state-icon {
+    font-size: 48px;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+.empty-state h3 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+.empty-state p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
 }
 
-/* Botão (se houver botões específicos, se não, pode usar .btn de base_styles.css) */
-/* .btn { ... } */
 
-/* Ajustes responsivos para a tabela */
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: 15px;
-        align-items: flex-start;
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 992px) {
+    .management-grid {
+        grid-template-columns: 1fr; /* Coluna única em telas menores */
     }
-
-    th, td {
-        padding: 10px;
+    .management-sidebar {
+        margin-top: 20px; /* Adiciona espaço no topo */
     }
-
-    /* Opcional: Esconder Descrição em telas pequenas */
-    /* th:nth-child(2), td:nth-child(2) { display: none; } */
 }

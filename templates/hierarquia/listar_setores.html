@@ -18,17 +18,31 @@
     {% if setores %}
         <div class="sector-cards-grid">
             {% for setor in setores %}
-                {# Cada card é um link para a lista de funcionários filtrada #}
-                <a href="{% url 'listar_funcionarios_por_setor' setor.id %}" class="sector-card">
-                    <div class="sector-card-icon">🏢</div>
-                    <div class="sector-card-name">{{ setor.nome }}</div>
-                    {# Opcional: Adicionar contagem de funcionários se você otimizar a view #}
-                    {# <div class="sector-card-count">{{ setor.num_funcionarios }} Funcionários</div> #}
-                </a>
+                <div class="sector-card">
+                    
+                    <div class="sector-card-header">
+                        <div class="sector-card-icon">
+                            <i class="fas fa-sitemap"></i> </div>
+                        <h3 class="sector-card-name">{{ setor.nome }}</h3>
+                    </div>
+                    
+                    <div class="sector-card-body">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ setor.num_funcionarios|default:0 }}</span>
+                            <span class="stat-label">Funcionários Ativos</span>
+                        </div>
+                        </div>
+                    
+                    <div class="sector-card-footer">
+                        <a href="{% url 'listar_funcionarios_por_setor' setor.id %}" class="btn-primary">
+                            Ver Funcionários <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
             {% endfor %}
         </div>
     {% else %}
-        <div class="empty-state-card"> {# Um card para estado vazio #}
+        <div class="empty-state-card">
              <p>Você não está associado a nenhum setor ou não há setores cadastrados.</p>
         </div>
     {% endif %}

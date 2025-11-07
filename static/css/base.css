@@ -1,58 +1,90 @@
-/* --- :root Variables (Light Theme - Default) --- */
+/* --- Variáveis do Tema Claro (Light Theme) --- */
 :root {
+    /* Cores Base */
+    --primary-color: #007bff; /* Azul primário da imagem */
+    --primary-hover: #0056b3; /* Um pouco mais escuro para hover */
+    --success-color: #16a34a;
+    --danger-color: #dc2626;
+    --warning-color: #ea580c;
+    
+    /* Escala de Cinza (Tailwind-like) */
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+
+    /* Variáveis de Layout */
     --sidebar-width-expanded: 250px;
-    --sidebar-width-collapsed: 70px; /* Width for icons only */
+    --sidebar-width-collapsed: 70px;
+    --navbar-height: 65px;
 
-    --bg-primary: #FFFFFF;
-    --bg-secondary: #f8f9fa;
-    --bg-navbar: #2F4673;
-    --bg-sidebar: #2F4673;
-    --bg-hover: rgba(217, 217, 217, 0.05); /* Sidebar hover background */
-    --bg-active: rgba(217, 217, 217, 0.1); /* Sidebar active background */
+    /* Mapeamento do Tema (Light Theme) */
+    --bg-primary: #FFFFFF;              /* Fundo dos cards/elementos */
+    --bg-secondary: #f8f9fa;            /* Fundo da página (cinza bem claro da imagem) */
+    --bg-navbar: #FFFFFF;               /* Navbar branca */
+    --bg-sidebar: #FFFFFF;              /* Sidebar branca */
+    --bg-hover: #e9ecef;                /* Cinza claro para hover (do menu lateral) */
+    --bg-active: #e9ecef;               /* Cinza claro para ativo (do menu lateral) */
 
-    --text-primary: #0D0D0D;
-    --text-secondary: #64758C;
-    --text-muted: #949BA6;
-    --text-navbar: #D9D9D9;
-    --text-sidebar: #D9D9D9;
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-500);
+    --text-muted: var(--gray-500);
+    --text-navbar: var(--gray-900);     /* Texto da navbar escuro */
+    --text-sidebar: var(--gray-700);    /* Texto do sidebar cinza escuro */
+    --text-sidebar-hover: var(--gray-900); /* Texto do sidebar hover mais escuro */
+
+    --border-color: var(--gray-200);
+    --border-accent: var(--primary-color); /* Destaque da borda ativa do sidebar */
+
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --shadow-navbar: rgba(0, 0, 0, 0.05); /* Sombra mais sutil */
+
+    --accent-color: var(--primary-color); /* Cor principal de links/botões */
+    --accent-color-orange: var(--warning-color); /* Para pendências */
+}
+
+/* --- Variáveis do Tema Escuro (Dark Theme) --- */
+/* Mantendo o tema escuro original, mas ajustando o primary-color */
+body.dark-theme {
+    --gray-500: #ffffff;
+    --primary-color: #007bff; /* Azul primário da imagem */
+    --primary-hover: #0056b3;
+
+    --bg-primary: var(--gray-900);      /* Fundo dos cards/elementos */
+    --bg-secondary: #0D0D0D;            /* Fundo da página (preto) */
+    --bg-navbar: var(--primary-color);  /* Navbar azul no dark theme */
+    --bg-sidebar: var(--primary-color); /* Sidebar azul no dark theme */
+    --bg-hover: rgba(255, 255, 255, 0.1);
+    --bg-active: rgba(255, 255, 255, 0.2);
+
+    --text-primary: var(--gray-100);
+    --text-secondary: var(--gray-300);
+    --text-muted: var(--gray-500);
+    --text-navbar: var(--gray-100);
+    --text-sidebar: var(--gray-200);
     --text-sidebar-hover: #FFFFFF;
 
-    --border-color: #D9D9D9;
-    --border-accent: #949BA6; /* Sidebar active indicator */
+    --border-color: var(--gray-700);
+    --border-accent: #FFFFFF;
 
-    --shadow-color: rgba(0, 0, 0, 0.1);
-    --shadow-navbar: rgba(0, 0, 0, 0.15);
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --shadow-navbar: rgba(0, 0, 0, 0.25);
 
-    --accent-color: #64758C;
+    --accent-color: var(--primary-color);
+    --accent-color-orange: var(--warning-color);
 }
 
-/* --- Dark Theme Variables --- */
-body.dark-theme {
-    --bg-primary: #1a1a1a;       /* Slightly lighter dark for cards/elements */
-    --bg-secondary: #0D0D0D;     /* Darkest for main content background */
-    --bg-navbar: #2F4673;        /* Dark Blue */
-    --bg-sidebar: #2F4673;       /* Dark Blue */
-    --bg-hover: rgba(148, 155, 166, 0.15); /* Subtle overlay using #949BA6 transparency for hover */
-    --bg-active: rgba(148, 155, 166, 0.25); /* Slightly stronger overlay for active */
-
-    --text-primary: #D9D9D9;     /* Light Gray for main text */
-    --text-secondary: #949BA6;    /* Mid Gray for less important text */
-    --text-muted: #64758C;       /* Mid Blue-Gray for subtle text (like sidebar header) */
-    --text-navbar: #D9D9D9;      /* Light Gray for navbar text */
-    --text-sidebar: #D9D9D9;     /* Light Gray for sidebar text */
-    --text-sidebar-hover: #FFFFFF; /* White for sidebar text hover/active */
-
-    --border-color: #64758C;     /* Mid Blue-Gray for borders */
-    --border-accent: #D9D9D9;    /* Light Gray for sidebar active indicator */
-
-    --shadow-color: rgba(217, 217, 217, 0.05); /* Subtle light shadow */
-    --shadow-navbar: rgba(217, 217, 217, 0.1); /* Slightly stronger light shadow */
-
-    --accent-color: #D9D9D9;     /* Light Gray as accent */
-}
 
 /* --- Global Styles --- */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text-primary);
@@ -68,7 +100,7 @@ body {
     background-color: var(--bg-navbar);
     color: var(--text-navbar);
     padding: 0 40px;
-    height: 65px;
+    height: var(--navbar-height); 
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -76,37 +108,75 @@ body {
     position: relative;
     z-index: 1001;
 }
-.navbar h1 { font-size: 20px; font-weight: 600; color: #FFFFFF; }
-.navbar-user { display: flex; align-items: center; gap: 25px; }
-.navbar-user span { font-size: 14px; color: var(--text-muted); }
-.navbar-user a, .theme-toggle-btn {
-    color: var(--text-navbar); text-decoration: none; padding: 8px 12px;
-    border-radius: 4px; font-size: 14px; font-weight: 500;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    cursor: pointer; background: none; border: none; font-family: inherit;
+
+/* Corrigindo a cor do título da navbar para o tema claro */
+:root .navbar h1 { 
+    font-size: 20px; 
+    font-weight: 600; 
+    color: var(--primary-color); /* Título azul no tema claro */
 }
-.navbar-user a:hover, .theme-toggle-btn:hover {
-    background-color: rgba(217, 217, 217, 0.1); color: #FFFFFF;
+body.dark-theme .navbar h1 {
+    color: #FFFFFF; /* Título branco no tema escuro */
+}
+
+.navbar-user { 
+    display: flex; 
+    align-items: center; 
+    gap: 25px; 
+}
+
+.navbar-user span { 
+    font-size: 14px; 
+    color: var(--text-muted); 
+}
+
+.navbar-user a, 
+.theme-toggle-btn {
+    color: var(--text-navbar); 
+    text-decoration: none; 
+    padding: 8px 12px;
+    border-radius: 4px; 
+    font-size: 14px; 
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    cursor: pointer; 
+    background: none; 
+    border: none; 
+    font-family: inherit;
+}
+
+/* Ajustando hover para o tema claro */
+:root .navbar-user a:hover, 
+:root .theme-toggle-btn:hover {
+    background-color: var(--bg-hover); 
+    color: var(--text-primary); /* Cor do texto primário no hover */
+}
+/* Mantendo o hover para o tema escuro */
+body.dark-theme .navbar-user a:hover, 
+body.dark-theme .theme-toggle-btn:hover {
+    background-color: rgba(217, 217, 217, 0.1); 
+    color: #FFFFFF;
 }
 
 /* --- Page Layout --- */
 .page-container {
     display: flex;
-    height: calc(100vh - 65px);
+    height: calc(100vh - var(--navbar-height)); 
 }
 
 /* --- Sidebar Styles --- */
 .sidebar {
-    width: var(--sidebar-width-expanded); /* Use variable */
+    width: var(--sidebar-width-expanded); 
     background: var(--bg-sidebar);
     height: 100%;
     overflow-y: auto;
-    overflow-x: hidden; /* Prevent horizontal scroll when collapsing */
+    overflow-x: hidden; 
     display: flex;
     flex-direction: column;
-    transition: width 0.3s ease; /* Smooth width transition */
+    transition: width 0.3s ease; 
     z-index: 1000;
-    position: relative; /* Needed for absolute positioning of pin button */
+    position: relative; 
+    border-right: 1px solid var(--border-color); /* Adicionando borda sutil */
 }
 
 /* Header within sidebar to hold title and pin button */
@@ -118,14 +188,14 @@ body {
 }
 
 .sidebar-header h3 {
-    padding: 0; /* Remove padding from h3 itself */
+    padding: 0; 
     font-size: 12px;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     font-weight: 600;
-    white-space: nowrap; /* Prevent wrapping */
-    opacity: 1; /* Default visible */
+    white-space: nowrap; 
+    opacity: 1; 
     transition: opacity 0.2s ease;
 }
 
@@ -142,72 +212,111 @@ body {
     opacity: 1;
     transition: opacity 0.2s ease;
 }
+
 .pin-btn:hover {
     color: var(--text-sidebar-hover);
     transform: scale(1.1);
 }
 
 /* Menu Items */
-.sidebar .menu-items { display: flex; flex-direction: column; padding-bottom: 20px; }
+.sidebar .menu-items { 
+    display: flex; 
+    flex-direction: column; 
+    padding-bottom: 20px; 
+}
+
 .sidebar .menu-item {
     padding: 12px 25px;
     text-decoration: none;
     color: var(--text-sidebar);
     font-weight: 500;
-    display: flex; /* <-- ESTA É A LINHA IMPORTANTE */
-    align-items: center; /* <-- E ESTA */
-    gap: 12px; /* <-- E ESTA */
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
     font-size: 15px;
     border-left: 3px solid transparent;
     margin-right: 1px;
     transition: background-color 0.2s ease, color 0.2s ease, border-left-color 0.2s ease;
-    white-space: nowrap; /* Prevent text wrapping */
+    white-space: nowrap; 
 }
-.sidebar .menu-item i {
+
+/* Corrigindo a cor do ícone no tema claro para ser o azul primário */
+:root .sidebar .menu-item i {
     font-size: 18px;
     width: 20px;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--primary-color); /* Ícone azul */
     transition: color 0.2s ease;
-    flex-shrink: 0; /* Prevent icon from shrinking */
+    flex-shrink: 0; 
 }
+/* Mantendo a cor do ícone no tema escuro */
+body.dark-theme .sidebar .menu-item i {
+    color: var(--text-muted);
+}
+
 .sidebar .menu-item .menu-text {
-    opacity: 1; /* Default visible */
-    transition: opacity 0.2s ease 0.1s; /* Slight delay on fade out */
+    opacity: 1; 
+    transition: opacity 0.2s ease 0.1s; 
     white-space: nowrap;
 }
 
 /* Hover/Active states */
-.sidebar .menu-item:hover { background-color: var(--bg-hover); color: var(--text-sidebar-hover); }
-.sidebar .menu-item:hover i { color: var(--text-sidebar-hover); }
-.sidebar .menu-item.active {
-    background-color: var(--bg-active); color: var(--text-sidebar-hover);
-    border-left-color: var(--border-accent); font-weight: 600;
+.sidebar .menu-item:hover { 
+    background-color: var(--bg-hover); 
+    color: var(--text-sidebar-hover); 
 }
-.sidebar .menu-item.active i { color: var(--text-sidebar-hover); }
+
+/* Corrigindo a cor do ícone no hover para o tema claro */
+:root .sidebar .menu-item:hover i { 
+    color: var(--primary-color); /* Ícone azul no hover */
+}
+/* Mantendo a cor do ícone no hover para o tema escuro */
+body.dark-theme .sidebar .menu-item:hover i { 
+    color: var(--text-sidebar-hover); 
+}
+
+.sidebar .menu-item.active {
+    background-color: var(--bg-active); 
+    color: var(--text-sidebar-hover);
+    border-left-color: var(--border-accent); 
+    font-weight: 600;
+}
+
+/* Corrigindo a cor do texto e ícone no estado ativo para o tema claro */
+:root .sidebar .menu-item.active {
+    background-color: var(--primary-color); /* Fundo azul no ativo */
+    color: #FFFFFF; /* Texto branco no ativo */
+    border-left-color: var(--primary-color); /* Borda azul no ativo */
+}
+:root .sidebar .menu-item.active i { 
+    color: #FFFFFF; /* Ícone branco no ativo */
+}
 
 /* --- Collapsed Sidebar State --- */
 .sidebar.sidebar-collapsed {
-    width: var(--sidebar-width-collapsed); /* Use variable */
+    width: var(--sidebar-width-collapsed); 
 }
+
 /* Hide text and header smoothly when collapsed */
 .sidebar.sidebar-collapsed .menu-text,
 .sidebar.sidebar-collapsed .sidebar-header h3,
-.sidebar.sidebar-collapsed .pin-btn { /* Hide pin button when collapsed */
+.sidebar.sidebar-collapsed .pin-btn { 
     opacity: 0;
-    width: 0; /* Helps prevent layout shifts */
-    overflow: hidden; /* Ensure it's fully hidden */
-    pointer-events: none; /* Prevent interaction */
+    width: 0; 
+    overflow: hidden; 
+    pointer-events: none; 
 }
+
 /* Center icon when collapsed */
 .sidebar.sidebar-collapsed .menu-item {
-    justify-content: center; /* Center icon horizontally */
-    padding-left: 0; /* Remove left padding */
-    padding-right: 0; /* Remove right padding */
-    gap: 0; /* Remove gap */
+    justify-content: center; 
+    padding-left: 0; 
+    padding-right: 0; 
+    gap: 0; 
 }
+
 .sidebar.sidebar-collapsed .menu-item i {
-    margin: 0; /* Ensure no extra margin on icon */
+    margin: 0; 
 }
 
 /* --- Main Content --- */
@@ -216,41 +325,64 @@ body {
     overflow-y: auto;
     padding: 30px;
     background-color: var(--bg-secondary);
-    margin-left: var(--sidebar-width-expanded);
+    margin-left: var(--sidebar-width-expanded); 
     transition: margin-left 0.3s ease;
 }
+
 .sidebar.sidebar-collapsed ~ .main-content {
-    margin-left: var(--sidebar-width-collapsed);
+    margin-left: var(--sidebar-width-collapsed); 
 }
+
 .container {
     max-width: 1000px;
     margin: 0 auto;
     padding: 0;
 }
+
 /* Generic Card Style */
 .card {
-    background: var(--bg-primary); border-radius: 10px; padding: 25px;
+    background: var(--bg-primary); 
+    border-radius: 10px; 
+    padding: 25px;
     box-shadow: 0 2px 10px var(--shadow-color);
     transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     margin-bottom: 20px;
+    border: 1px solid var(--border-color); /* Adicionando borda sutil para o card */
 }
-/* Add other styles using variables */
-
 
 /* --- Responsive Styles --- */
 @media (max-width: 992px) {
     /* Hide sidebar completely and remove margin */
-    .sidebar { width: 0; overflow: hidden; padding-top: 0; border-right: none; }
+    .sidebar { 
+        width: 0; 
+        overflow: hidden; 
+        padding-top: 0; 
+        border-right: none; 
+    }
+    
     .sidebar.sidebar-collapsed ~ .main-content,
     .sidebar ~ .main-content {
-        margin-left: 0; /* No margin when sidebar is hidden */
+        margin-left: 0; 
     }
-    .page-container { height: auto; }
-    .main-content { padding: 20px; }
+    
+    .page-container { 
+        height: auto; 
+    }
+    
+    .main-content { 
+        padding: 20px; 
+    }
 }
+
 @media (max-width: 768px) {
-    .navbar { padding: 15px 20px; height: auto; }
-    .main-content { padding: 15px; }
+    .navbar { 
+        padding: 15px 20px; 
+        height: auto; 
+    }
+    
+    .main-content { 
+        padding: 15px; 
+    }
 }
 
 /* --- Alertas de Mensagem (para o base.html) --- */
@@ -261,42 +393,51 @@ body {
     border-radius: 6px;
     font-weight: 500;
 }
+
+/* Light Theme Alerts */
 .alert-success {
     color: #155724;
     background-color: #d4edda;
     border-color: #c3e6cb;
 }
+
 .alert-info {
     color: #0c5460;
     background-color: #d1ecf1;
     border-color: #bee5eb;
 }
+
 .alert-warning {
     color: #856404;
     background-color: #fff3cd;
     border-color: #ffeeba;
 }
+
 .alert-error { /* Django usa 'error' tag level */
     color: #721c24;
     background-color: #f8d7da;
     border-color: #f5c6cb;
 }
-/* Dark theme alerts */
+
+/* Dark Theme Alerts */
 body.dark-theme .alert-success {
     background-color: rgba(40, 167, 69, 0.2); 
     color: #5ddc83;
     border-color: rgba(40, 167, 69, 0.4);
 }
+
 body.dark-theme .alert-info {
     background-color: rgba(0, 123, 255, 0.2); 
     color: #6bafff;
     border-color: rgba(0, 123, 255, 0.4);
 }
+
 body.dark-theme .alert-warning {
     background-color: rgba(255, 193, 7, 0.2); 
     color: #ffdc73;
     border-color: rgba(255, 193, 7, 0.4);
 }
+
 body.dark-theme .alert-error {
     background-color: rgba(220, 53, 69, 0.2); 
     color: #ff8a80;
@@ -306,14 +447,14 @@ body.dark-theme .alert-error {
 
 /* --- Estilos do Módulo (Menu Sanfona) --- */
 .sidebar-module {
-    overflow: hidden; /* Essencial para a animação de altura */
+    overflow: hidden; 
 }
 
 /* O "botão" que abre o módulo */
 .sidebar-module .module-trigger {
     display: flex;
     align-items: center;
-    cursor: pointer; /* Adiciona cursor de clique */
+    cursor: pointer; 
 }
 
 /* A seta (ícone) */
@@ -321,38 +462,40 @@ body.dark-theme .alert-error {
     font-size: 12px;
     color: var(--text-muted);
     transition: transform 0.3s ease;
-    margin-right: 0; /* Remove margem do ícone principal */
-    width: auto; /* Reseta a largura do ícone */
+    margin-right: 0; 
+    width: auto; 
 }
 
 /* Os links dentro do módulo */
 .sidebar-module .module-content {
-    max-height: 0; /* ✅ COMEÇA FECHADO */
+    max-height: 0; 
     overflow: hidden;
     transition: max-height 0.3s ease-out;
-    background-color: var(--bg-active); /* Fundo sutil para os sub-itens */
+    background-color: var(--bg-active); 
 }
 
 /* Links de sub-item */
 .sidebar-module .sub-item {
-    padding-left: 55px; /* Indentação (25px + 12px + 18px) */
+    padding-left: 55px; 
     font-size: 14px;
     color: var(--text-sidebar);
 }
+
 .sidebar-module .sub-item:hover {
-     background-color: var(--bg-hover);
+    background-color: var(--bg-hover);
 }
+
 .sidebar-module .sub-item.active {
     font-weight: 600;
     color: var(--text-sidebar-hover);
-    border-left-color: transparent; /* Remove a borda principal */
+    border-left-color: transparent; 
     background-color: var(--bg-hover); 
 }
 
 /* --- Estado Aberto --- */
 /* Quando o JS adicionar a classe .open, este CSS será aplicado */
 .sidebar-module.open .module-content {
-    max-height: 500px; /* Altura máxima para abrir (ajuste se tiver muitos links) */
+    max-height: 500px; 
     transition: max-height 0.4s ease-in;
 }
 
@@ -367,6 +510,27 @@ body.dark-theme .alert-error {
     color: var(--text-sidebar-hover);
     border-left-color: var(--border-accent);
 }
+
 .sidebar-module.open .module-trigger i {
     color: var(--text-sidebar-hover);
+}
+
+/* Corrigindo o estado ativo do módulo para o tema claro */
+:root .sidebar-module.open .module-trigger {
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+    border-left-color: var(--primary-color);
+}
+:root .sidebar-module.open .module-trigger i {
+    color: #FFFFFF;
+}
+
+/* Corrigindo o sub-item ativo para o tema claro */
+:root .sidebar-module .sub-item.active {
+    background-color: var(--bg-hover); /* Fundo cinza claro */
+    color: var(--primary-color); /* Texto azul */
+    font-weight: 600;
+}
+:root .sidebar-module .sub-item.active i {
+    color: var(--primary-color); /* Ícone azul */
 }

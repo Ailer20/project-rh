@@ -9,21 +9,31 @@
 }
 .page-header h1 {
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700; /* Mais forte */
     color: var(--text-primary);
+    margin: 0 0 5px 0;
 }
+.page-header p { /* Para a descrição */
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0;
+}
+
+/* --- Texto de contagem --- */
 .text-muted {
     color: var(--text-muted);
-    font-size: 15px;
-    margin-bottom: 20px;
+    font-size: 14px;
+    margin-bottom: 15px;
+    padding-left: 10px;
 }
 
 /* --- Container da Tabela (Card) --- */
 .table-responsive {
     background: var(--bg-primary);
     border-radius: 10px;
-    padding: 10px 25px 25px 25px;
+    padding: 10px 10px 10px 10px; /* Padding menor para tabela */
     box-shadow: 0 2px 10px var(--shadow-color);
+    border: 1px solid var(--border-color);
     overflow-x: auto;
 }
 
@@ -34,15 +44,20 @@
     font-size: 15px;
 }
 .data-table thead th {
-    color: var(--text-muted);
+    color: var(--text-secondary); /* ✅ Corrigido */
     text-align: left;
-    padding: 20px 15px;
+    padding: 16px 20px; /* Padding consistente */
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color); /* Borda mais fina */
+    background: var(--gray-50); /* Fundo sutil */
 }
+body.dark-theme .data-table thead th {
+    background: var(--gray-900);
+}
+
 .data-table tbody tr {
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.2s ease;
@@ -51,20 +66,24 @@
     border-bottom: none;
 }
 .data-table tbody tr:hover {
-    background-color: var(--bg-active);
+    background-color: var(--gray-50); /* ✅ Corrigido */
 }
+body.dark-theme .data-table tbody tr:hover {
+    background-color: var(--gray-800);
+}
+
 .data-table tbody td {
-    padding: 18px 15px;
+    padding: 16px 20px; /* Padding consistente */
     color: var(--text-secondary);
     vertical-align: middle;
 }
 .data-table tbody td strong {
     color: var(--text-primary);
     font-weight: 600;
-    font-size: 16px;
+    font-size: 15px; /* Tamanho padrão */
 }
 
-/* --- Badges de Status --- */
+/* --- ✅ Badges de Status (Ajustados para novas variáveis) --- */
 .status-badge {
     padding: 5px 12px;
     border-radius: 16px;
@@ -82,34 +101,34 @@
     display: inline-block;
 }
 
-/* Cores dos status PENDENTES (os únicos que devem aparecer aqui) */
+/* Pendentes (Laranja) */
 .status-pendente_gestor,
 .status-pendente_rh {
-    background-color: #fff8e6;
-    color: #b38600;
+    background-color: rgba(234, 88, 12, 0.1); 
+    color: var(--warning-color);
 }
 .status-pendente_gestor::before,
 .status-pendente_rh::before {
-    background-color: #ffc107; /* Amarelo */
+    background-color: var(--warning-color); /* Laranja */
 }
 
 /* Dark Theme */
 body.dark-theme .status-pendente_gestor,
 body.dark-theme .status-pendente_rh {
-    background-color: rgba(255, 193, 7, 0.2);
-    color: #ffdc73;
+    background-color: rgba(234, 88, 12, 0.2); 
+    color: #fdab6a;
 }
 
-/* --- Botão de Ação na Tabela --- */
+/* --- ✅ Botão de Ação na Tabela (Ajustado) --- */
 .btn-action-analisar {
-    background-color: var(--bg-sidebar);
-    border: 1px solid var(--bg-sidebar);
-    color: #FFFFFF;
+    background-color: var(--primary-color); /* ✅ Corrigido */
+    border: 1px solid var(--primary-color); /* ✅ Corrigido */
+    color: #FFFFFF; /* ✅ Corrigido */
     text-decoration: none;
-    padding: 6px 14px;
+    padding: 8px 14px;
     border-radius: 6px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600; /* ✅ Corrigido */
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -119,38 +138,72 @@ body.dark-theme .status-pendente_rh {
     font-size: 13px;
 }
 .btn-action-analisar:hover {
-    background-color: #3b5a94; /* Tom mais claro */
-    border-color: #3b5a94;
+    background-color: var(--primary-hover); /* ✅ Corrigido */
+    border-color: var(--primary-hover); /* ✅ Corrigido */
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(47, 70, 115, 0.3);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); /* ✅ Corrigido */
 }
 
 /* --- Estado Vazio --- */
 .no-results {
     background: var(--bg-primary);
     border-radius: 10px;
-    padding: 40px;
+    padding: 50px 40px;
     text-align: center;
-    font-size: 16px;
-    color: var(--text-secondary);
-    font-weight: 500;
     box-shadow: 0 2px 10px var(--shadow-color);
     border: 1px dashed var(--border-color);
 }
 .no-results::before {
-    content: '\f0f6'; /* Ícone de "documento" ou "inbox" */
+    content: '\f522'; /* Ícone de "user-slash" (Desligamento) */
     font-family: 'Font Awesome 5 Free';
     font-weight: 900;
-    color: var(--text-muted);
+    color: var(--danger-color); /* ✅ Vermelho */
     font-size: 40px;
     margin-bottom: 15px;
     display: block;
 }
+.no-results h4 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+.no-results p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin: 0;
+}
 
-/* --- Alertas --- */
-.alert { /* ... */ }
-.alert-success { /* ... */ }
-.alert-info { /* ... */ }
-body.dark-theme .alert-success { /* ... */ }
-body.dark-theme .alert-info { /* ... */ }
-/* (Copie os estilos de .alert do seu base.css ou outro css se necessário) */
+/* --- Paginação (Copiado do CSS anterior) --- */
+.pagination {
+    margin-top: 25px;
+    text-align: center;
+}
+.pagination a {
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--primary-color);
+    margin: 0 3px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+}
+.pagination a:hover {
+    background: var(--gray-50);
+}
+body.dark-theme .pagination a {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+}
+body.dark-theme .pagination a:hover {
+    background: var(--gray-700);
+}
+.pagination .current {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 10px;
+}
+
+/* --- Alertas (Removidos, pois já estão no base.css) --- */

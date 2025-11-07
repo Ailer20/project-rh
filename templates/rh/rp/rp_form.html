@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Abrir Requisição Pessoal" }}{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/rp_form.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Estilos do Select2 (mantidos como antes) */
+        .select2-container--default .select2-selection--single {
+            background-color: var(--bg-secondary); border: 1px solid var(--border-color);
+            height: 47px; padding: 8px 0; border-radius: 6px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-primary); line-height: 28px; padding-left: 15px; padding-right: 20px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 45px; right: 5px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: var(--text-secondary) transparent transparent transparent; margin-top: 4px;
+        }
+        .select2-dropdown {
+            background-color: var(--bg-primary); border: 1px solid var(--border-color);
+            box-shadow: 0 4px 10px var(--shadow-color); border-radius: 6px;
+        }
+        .select2-search--dropdown .select2-search__field {
+            background-color: var(--bg-secondary); border: 1px solid var(--border-color);
+            color: var(--text-primary); border-radius: 4px; margin: 5px;
+        }
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: var(--bg-sidebar); color: var(--text-sidebar-hover);
+        }
+        .select2-results__option { padding: 10px 15px; }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="rp-form-container">
+    
+    <div class="page-header">
+        <h1>{{ titulo_pagina|default:"Abrir Requisição Pessoal" }}</h1>
+    </div>
+
+    <div class="card form-card">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+
+                <div class="form-field-group full-width">
+                    <label for="{{ form.vaga.id_for_label }}">{{ form.vaga.label }}</label>
+                    {{ form.vaga }}
+                    {% if form.vaga.help_text %}<small class="helptext">{{ form.vaga.help_text }}</small>{% endif %}
+                    {% if form.vaga.errors %}<div class="errorlist">{{ form.vaga.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.tipo_vaga.id_for_label }}">{{ form.tipo_vaga.label }}</label>
+                    {{ form.tipo_vaga }}
+                    {% if form.tipo_vaga.help_text %}<small class="helptext">{{ form.tipo_vaga.help_text }}</small>{% endif %}
+                    {% if form.tipo_vaga.errors %}<div class="errorlist">{{ form.tipo_vaga.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="form-field-group">
+                    <label for="{{ form.local_trabalho.id_for_label }}">{{ form.local_trabalho.label }}</label>
+                    {{ form.local_trabalho }}
+                    {% if form.local_trabalho.help_text %}<small class="helptext">{{ form.local_trabalho.help_text }}</small>{% endif %}
+                    {% if form.local_trabalho.errors %}<div class="errorlist">{{ form.local_trabalho.errors }}</div>{% endif %}
+                </div>
+
+                <div class="substituicao-wrapper" id="substituicao-fields">
+                    <div class="form-field-group">
+                        <label for="{{ form.nome_substituido.id_for_label }}">{{ form.nome_substituido.label }}</label>
+                        {{ form.nome_substituido }}
+                        {% if form.nome_substituido.help_text %}<small class="helptext">{{ form.nome_substituido.help_text }}</small>{% endif %}
+                        {% if form.nome_substituido.errors %}<div class="errorlist">{{ form.nome_substituido.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-field-group">
+                        <label for="{{ form.motivo_substituicao.id_for_label }}">{{ form.motivo_substituicao.label }}</label>
+                        {{ form.motivo_substituicao }}
+                        {% if form.motivo_substituicao.help_text %}<small class="helptext">{{ form.motivo_substituicao.help_text }}</small>{% endif %}
+                        {% if form.motivo_substituicao.errors %}<div class="errorlist">{{ form.motivo_substituicao.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.data_prevista_inicio.id_for_label }}">{{ form.data_prevista_inicio.label }}</label>
+                    <input type="date" name="{{ form.data_prevista_inicio.name }}" id="{{ form.data_prevista_inicio.id_for_label }}" {% if form.data_prevista_inicio.value %} value="{{ form.data_prevista_inicio.value|date:'Y-m-d' }}" {% endif %}>
+                    {% if form.data_prevista_inicio.help_text %}<small class="helptext">{{ form.data_prevista_inicio.help_text }}</small>{% endif %}
+                    {% if form.data_prevista_inicio.errors %}<div class="errorlist">{{ form.data_prevista_inicio.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.prazo_contratacao.id_for_label }}">{{ form.prazo_contratacao.label }}</label>
+                     <input type="date" name="{{ form.prazo_contratacao.name }}" id="{{ form.prazo_contratacao.id_for_label }}" {% if form.prazo_contratacao.value %} value="{{ form.prazo_contratacao.value|date:'Y-m-d' }}" {% endif %}>
+                    {% if form.prazo_contratacao.help_text %}<small class="helptext">{{ form.prazo_contratacao.help_text }}</small>{% endif %}
+                    {% if form.prazo_contratacao.errors %}<div class="errorlist">{{ form.prazo_contratacao.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group full-width">
+                     <label for="{{ form.horario_trabalho.id_for_label }}">{{ form.horario_trabalho.label }}</label>
+                    {{ form.horario_trabalho }}
+                    {% if form.horario_trabalho.help_text %}<small class="helptext">{{ form.horario_trabalho.help_text }}</small>{% endif %}
+                    {% if form.horario_trabalho.errors %}<div class="errorlist">{{ form.horario_trabalho.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="form-field-group full-width">
+                    <label for="{{ form.justificativa_rp.id_for_label }}">{{ form.justificativa_rp.label }}</label>
+                    {{ form.justificativa_rp }}
+                    {% if form.justificativa_rp.help_text %}<small class="helptext">{{ form.justificativa_rp.help_text }}</small>{% endif %}
+                    {% if form.justificativa_rp.errors %}<div class="errorlist">{{ form.justificativa_rp.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'dashboard' %}" class="btn btn-cancel">Cancelar</a>
+                <button type="submit" class="btn btn-submit">
+                    <i class="fas fa-paper-plane"></i> Enviar para Aprovação
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock content %}
+
+
+{% block extra_js %}
+    {# ✅ 1. Carrega jQuery DIRETAMENTE AQUI #}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    {# ✅ 2. Carrega Select2 JS DIRETAMENTE AQUI (depois do jQuery) #}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> 
+    {# Usando rc.0 para combinar com seu CSS link #}
+
+    {# ✅ 3. Script específico para ESTA página (Executa DEPOIS de carregar jQuery e Select2 JS) #}
+    <script>
+        // Garante que o código rode apenas após o DOM estar pronto E jQuery/Select2 carregados
+        $(document).ready(function() { 
+            console.log("Script rp_form.html iniciado (versão com includes locais)"); 
+
+            // --- Inicializa o Select2 ---
+            var $selects = $('.form-grid select');
+            if ($selects.length > 0) {
+                // Verifica se a função select2 existe ANTES de chamar
+                if ($.fn.select2) { 
+                    console.log("Inicializando Select2 para", $selects.length, "select(s)");
+                    try {
+                        $selects.select2({
+                            width: '100%', 
+                        });
+                        console.log("Select2 inicializado com sucesso.");
+                    } catch (e) {
+                        console.error("Erro ao inicializar Select2:", e);
+                    }
+                } else {
+                    console.error("Erro: Função $.fn.select2 não encontrada! O Select2 JS não carregou corretamente?");
+                }
+            } else {
+                 console.log("Nenhum elemento select encontrado em .form-grid para inicializar o Select2");
+            }
+
+            // --- Lógica de Mostrar/Esconder ---
+            const tipoVagaSelect = $('#id_tipo_vaga'); 
+            const substituicaoFields = $('#substituicao-fields');
+
+            if (tipoVagaSelect.length === 0) {
+                console.error("Não foi possível encontrar o elemento select #id_tipo_vaga!");
+                return; 
+            }
+             if (substituicaoFields.length === 0) {
+                console.error("Não foi possível encontrar o elemento wrapper #substituicao-fields!");
+                return; 
+            }
+
+            function toggleSubstituicaoFields() {
+                var selectedValue = tipoVagaSelect.val(); 
+                console.log("Função toggleSubstituicaoFields chamada. Valor selecionado:", selectedValue); 
+
+                if (selectedValue === 'substituicao') { 
+                    console.log("Condição atendida: Mostrando campos de substituição.");
+                    substituicaoFields.css('display', 'grid'); 
+                } else {
+                    console.log("Condição NÃO atendida: Escondendo campos de substituição.");
+                    substituicaoFields.css('display', 'none'); 
+                }
+            }
+
+            // Executa no carregamento inicial da página
+            console.log("Executando toggleSubstituicaoFields inicial...");
+            toggleSubstituicaoFields(); 
+            
+            // Anexa o listener de evento para mudanças
+            console.log("Anexando listener 'change' a #id_tipo_vaga");
+            tipoVagaSelect.on('change', function() {
+                 console.log("#id_tipo_vaga mudou!"); 
+                 toggleSubstituicaoFields(); 
+            }); 
+
+            console.log("Configuração do script rp_form.html finalizada"); 
+        });
+    </script>
+{% endblock extra_js %}

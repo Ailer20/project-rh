@@ -1,53 +1,94 @@
-{% extends 'base.html' %} {# Ou 'hierarquia/base.html' #}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Gerenciar Cargos - Sistema de Hierarquia{% endblock title %}
+{% block title %}Gerenciar Cargos - Sistema RH{% endblock title %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/gerenciar_cargos.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h2>Gerenciar Cargos</h2>
-        {# Adicionar botão para novo cargo aqui, se tiver uma view para isso #}
-        {# <a href="{% url 'criar_cargo' %}" class="btn">+ Novo Cargo</a> #}
-    </div>
+<div class="management-container">
 
-    {% if cargos %}
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Nível</th>
-                    <th>Descrição</th>
-                    {# Adicionar coluna Ações se tiver edição/exclusão #}
-                    {# <th>Ações</th> #}
-                </tr>
-            </thead>
-            <tbody>
-                {% for cargo in cargos %}
-                <tr>
-                    <td><strong>{{ cargo.nome }}</strong></td>
-                    <td><span class="nivel-badge">Nível {{ cargo.nivel }}</span></td>
-                    <td>{{ cargo.descricao|default:"-" }}</td> {# Mostra '-' se descrição for vazia #}
-                    {# Adicionar ações aqui #}
-                    {# <td><a href="#">Editar</a> | <a href="#">Excluir</a></td> #}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="table-container"> {# Mantém o card branco mesmo vazio #}
-        <div class="empty-state">
-            <p>Nenhum cargo cadastrado</p>
+        <div class="page-header">
+        <div class="header-content">
+            <h1>Gerenciar Cargos</h1>
+            <p>Adicione, edite ou visualize os cargos e seus níveis hierárquicos.</p>
         </div>
+        <a href="{% url 'dashboard' %}" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+        </a>
     </div>
-    {% endif %}
 
-    <a href="{% url 'dashboard' %}" class="btn" style="margin-top: 20px;">← Voltar ao Dashboard</a>
+        <div class="management-grid">
+
+                <div class="management-content">
+            <h2>Cargos Existentes</h2>
+            <div class="table-container card">
+                {% if cargos %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome do Cargo</th>
+                            <th>Nível</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cargo in cargos %}
+                        <tr>
+                            <td><strong>{{ cargo.nome }}</strong></td>
+                            <td><span class="nivel-badge">{{ cargo.get_nivel_display }}</span></td>
+                            <td>{{ cargo.descricao|default:"-" }}</td>
+                                                    </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="fas fa-id-badge"></i></div>
+                    <h3>Nenhum cargo cadastrado</h3>
+                    <p>Use o formulário ao lado para criar o primeiro.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+                <div class="management-sidebar">
+            <h2>Adicionar Novo Cargo</h2>
+            <div class="card form-card">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-field-group">
+                        <label for="id_nome">Nome do Cargo</label>
+                        <input type="text" name="nome" id="id_nome" required>
+                    </div>
+                    
+                    <div class="form-field-group">
+                        <label for="id_nivel">Nível Hierárquico</label>
+                        <select name="nivel" id="id_nivel" required>
+                            <option value="">---------</option>
+                            {% for value, text in nivel_choices %}
+                                <option value="{{ value }}">{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-field-group">
+                        <label for="id_descricao">Descrição (Opcional)</label>
+                        <textarea name="descricao" id="id_descricao" rows="4"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Salvar Cargo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
 </div>
 {% endblock content %}

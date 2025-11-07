@@ -1,51 +1,82 @@
-{% extends 'base.html' %} {# Ou 'hierarquia/base.html' #}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Gerenciar Setores - Sistema de Hierarquia{% endblock title %}
+{% block title %}Gerenciar Setores - Sistema RH{% endblock title %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/gerenciar_setores.css' %}">
+        <link rel="stylesheet" href="{% static 'css/gerenciar_setores.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h2>Gerenciar Setores</h2>
-        {# Adicionar botão para novo setor aqui, se tiver uma view para isso #}
-        {# <a href="{% url 'criar_setor' %}" class="btn">+ Novo Setor</a> #}
-    </div>
+<div class="management-container">
 
-    {% if setores %}
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Descrição</th>
-                    {# Adicionar coluna Ações se tiver edição/exclusão #}
-                    {# <th>Ações</th> #}
-                </tr>
-            </thead>
-            <tbody>
-                {% for setor in setores %}
-                <tr>
-                    <td><strong>{{ setor.nome }}</strong></td>
-                    <td>{{ setor.descricao|default:"-" }}</td> {# Mostra '-' se descrição for vazia #}
-                    {# Adicionar ações aqui #}
-                    {# <td><a href="#">Editar</a> | <a href="#">Excluir</a></td> #}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="table-container"> {# Mantém o card branco mesmo vazio #}
-        <div class="empty-state">
-            <p>Nenhum setor cadastrado</p>
+        <div class="page-header">
+        <div class="header-content">
+            <h1>Gerenciar Setores</h1>
+            <p>Adicione ou visualize os setores da empresa.</p>
         </div>
+        <a href="{% url 'dashboard' %}" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+        </a>
     </div>
-    {% endif %}
 
-    <a href="{% url 'dashboard' %}" class="btn" style="margin-top: 20px;">← Voltar ao Dashboard</a>
+        <div class="management-grid">
+
+        <div class="management-content">
+            <h2>Setores Existentes</h2>
+            <div class="table-container card">
+                {% if setores %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome do Setor</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for setor in setores %}
+                        <tr>
+                            <td><strong>{{ setor.nome }}</strong></td>
+                            <td>{{ setor.descricao|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="fas fa-sitemap"></i></div>
+                    <h3>Nenhum setor cadastrado</h3>
+                    <p>Use o formulário ao lado para criar o primeiro.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="management-sidebar">
+            <h2>Adicionar Novo Setor</h2>
+            <div class="card form-card">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-field-group">
+                        <label for="id_nome">Nome do Setor</label>
+                        <input type="text" name="nome" id="id_nome" required>
+                    </div>
+
+                    <div class="form-field-group">
+                        <label for="id_descricao">Descrição (Opcional)</label>
+                        <textarea name="descricao" id="id_descricao" rows="4"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Salvar Setor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
 </div>
 {% endblock content %}

@@ -1,4 +1,4 @@
-/* static/css/rh/minhas_rps_list.css */
+/* static/css/rh/historico_mps_list.css */
 
 /* --- Header da Página --- */
 .page-header {
@@ -7,43 +7,31 @@
     align-items: center;
     margin-bottom: 25px;
 }
-
 .page-header h1 {
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
+    margin: 0 0 5px 0;
 }
-
-/* --- Botão Principal de Ação --- */
-.btn-add {
-    background-color: var(--bg-sidebar); /* Azul do sistema */
-    color: #FFFFFF;
-    text-decoration: none;
-    padding: 10px 18px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 15px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-.btn-add:hover {
-    background-color: #3b5a94; /* Tom mais claro do azul */
-    box-shadow: 0 4px 12px rgba(47, 70, 115, 0.3);
-    transform: translateY(-2px);
-}
-.btn-add i {
-    font-size: 14px;
+.page-header p { /* Para a descrição */
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0;
 }
 
 /* --- Container da Tabela (Card) --- */
 .table-responsive {
     background: var(--bg-primary);
     border-radius: 10px;
-    padding: 10px 25px 25px 25px;
+    padding: 10px 10px 10px 10px;
     box-shadow: 0 2px 10px var(--shadow-color);
+    border: 1px solid var(--border-color);
     overflow-x: auto;
+}
+p.text-muted {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 15px;
 }
 
 /* --- Tabela de Dados --- */
@@ -54,14 +42,18 @@
 }
 
 .data-table thead th {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     text-align: left;
-    padding: 20px 15px;
+    padding: 16px 20px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid var(--border-color); 
+    border-bottom: 1px solid var(--border-color);
+    background: var(--gray-50); 
+}
+body.dark-theme .data-table thead th {
+    background: var(--gray-900);
 }
 
 .data-table tbody tr {
@@ -74,11 +66,14 @@
 }
 
 .data-table tbody tr:hover {
-    background-color: var(--bg-active); 
+    background-color: var(--gray-50); 
+}
+body.dark-theme .data-table tbody tr:hover {
+    background-color: var(--gray-800);
 }
 
 .data-table tbody td {
-    padding: 18px 15px;
+    padding: 16px 20px;
     color: var(--text-secondary);
     vertical-align: middle;
 }
@@ -86,10 +81,10 @@
 .data-table tbody td strong {
     color: var(--text-primary);
     font-weight: 600;
-    font-size: 16px;
+    font-size: 15px;
 }
 
-/* --- Badges de Status (movidos do inline) --- */
+/* --- Badges de Status (Ajustados para Movimentação Pessoal) --- */
 .status-badge {
     padding: 5px 12px;
     border-radius: 16px;
@@ -107,86 +102,60 @@
     display: inline-block;
 }
 
-/* Cores dos status PENDENTES */
-.status-pendente_gestor, 
+/* Pendentes (Laranja) */
+.status-pendente_gestores,
 .status-pendente_rh { 
-    background-color: #fff8e6; 
-    color: #b38600;
+    background-color: rgba(234, 88, 12, 0.1); 
+    color: var(--warning-color);
 }
-.status-pendente_gestor::before, 
+.status-pendente_gestores::before, 
 .status-pendente_rh::before { 
-    background-color: #ffc107; /* Amarelo */
+    background-color: var(--warning-color); 
 }
 
-/* Cor do status EM REVISÃO */
-.status-em_revisao_gestor { 
-    background-color: #fff3e0; 
-    color: #e65100;
-}
-.status-em_revisao_gestor::before { 
-    background-color: #fd7e14; /* Laranja */
-}
-
-/* Cor do status APROVADA */
+/* Aprovada (Verde) */
 .status-aprovada { 
-    background-color: #e6f7ec; 
-    color: #2d8653; 
+    background-color: rgba(22, 163, 74, 0.1); 
+    color: var(--success-color); 
 }
 .status-aprovada::before { 
-    background-color: #28a745; /* Verde */
+    background-color: var(--success-color); 
 }
 
-/* Cor do status REJEITADA */
+/* Rejeitada (Vermelho) */
 .status-rejeitada { 
-    background-color: #ffebee; 
-    color: #b71c1c; 
+    background-color: rgba(220, 38, 38, 0.1); 
+    color: var(--danger-color); 
 }
 .status-rejeitada::before { 
-    background-color: #dc3545; /* Vermelho */
-}
-
-/* Cor do status CANCELADA */
-.status-cancelada { 
-    background-color: #f1f3f5; 
-    color: #64758C; 
-}
-.status-cancelada::before { 
-    background-color: #6c757d; /* Cinza */
+    background-color: var(--danger-color); 
 }
 
 /* Dark Theme */
-body.dark-theme .status-pendente_gestor,
+body.dark-theme .status-pendente_gestores,
 body.dark-theme .status-pendente_rh { 
-    background-color: rgba(255, 193, 7, 0.2); 
-    color: #ffdc73; 
-}
-body.dark-theme .status-em_revisao_gestor { 
-    background-color: rgba(253, 126, 20, 0.2); 
+    background-color: rgba(234, 88, 12, 0.2); 
     color: #fdab6a; 
 }
 body.dark-theme .status-aprovada { 
-    background-color: rgba(40, 167, 69, 0.2); 
+    background-color: rgba(22, 163, 74, 0.2); 
     color: #5ddc83; 
 }
 body.dark-theme .status-rejeitada { 
-    background-color: rgba(220, 53, 69, 0.2); 
+    background-color: rgba(220, 38, 38, 0.2); 
     color: #ff8a80; 
-}
-body.dark-theme .status-cancelada { 
-    background-color: rgba(108, 117, 125, 0.2); 
-    color: #a0a0b0; 
 }
 
 /* --- Botão de Ação na Tabela --- */
-.btn-action-detail {
+.btn-action-detail { /* Renomeado para não conflitar */
     background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--gray-300);
     color: var(--text-secondary);
     text-decoration: none;
-    padding: 6px 14px;
+    padding: 8px 14px;
     border-radius: 6px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -196,52 +165,94 @@ body.dark-theme .status-cancelada {
     font-size: 13px;
 }
 .btn-action-detail:hover {
-    border-color: var(--bg-sidebar);
-    background-color: var(--bg-active);
-    color: var(--bg-sidebar);
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: #FFFFFF;
 }
-body.dark-theme .btn-action-detail:hover {
-    color: var(--text-sidebar-hover);
+body.dark-theme .btn-action-detail {
+    border-color: var(--gray-700);
 }
 
 /* --- Estado Vazio --- */
 .no-results {
     background: var(--bg-primary);
     border-radius: 10px;
-    padding: 40px;
+    padding: 50px 40px;
     text-align: center;
-    font-size: 16px;
-    color: var(--text-secondary);
-    font-weight: 500;
     box-shadow: 0 2px 10px var(--shadow-color);
     border: 1px dashed var(--border-color);
 }
-.no-results::before {
-    content: '\f15c'; /* Ícone de "file-alt" */
+/* Ícone específico para MP */
+.no-results i {
     font-family: 'Font Awesome 5 Free';
-    font-weight: 400; /* Regular */
-    color: var(--text-muted);
+    font-weight: 900; 
+    color: var(--primary-color);
     font-size: 40px;
     margin-bottom: 15px;
     display: block;
 }
-
-/* --- Alertas --- */
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 6px;
+.no-results h4 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+.no-results p {
+    font-size: 15px;
+    color: var(--text-secondary);
     font-weight: 500;
+    margin: 0;
 }
-.alert-success {
-    background-color: #e6f7ec;
-    color: #2d8653;
-    border: 1px solid #b8e0c9;
-}
-/* (Adicione .alert-info, .alert-danger, .alert-warning se precisar) */
 
-body.dark-theme .alert-success {
-    background-color: rgba(40, 167, 69, 0.2); 
-    color: #5ddc83;
-    border-color: rgba(40, 167, 69, 0.4);
+/* --- Paginação --- */
+.pagination {
+    margin-top: 25px;
+    text-align: center;
+}
+.pagination a {
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--primary-color);
+    margin: 0 3px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+}
+.pagination a:hover {
+    background: var(--gray-50);
+}
+body.dark-theme .pagination a {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+}
+body.dark-theme .pagination a:hover {
+    background: var(--gray-700);
+}
+.pagination .current {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 10px;
+}
+/* --- Botão Principal de Ação --- */
+.btn-add {
+    background-color: var(--primary-color); /* Cor primária (azul) */
+    color: #FFFFFF;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 600; 
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-add:hover {
+    background-color: var(--primary-hover); /* Tom mais escuro de azul */
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); /* Sombra azul */
+    transform: translateY(-2px);
+}
+.btn-add i {
+    font-size: 14px;
 }

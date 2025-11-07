@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Solicitar Desligamento" }}{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/rd_form.css' %}">
+    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    
+    <style>
+        .select2-container--default .select2-selection--single {
+            background-color: var(--bg-secondary); border: 1px solid var(--border-color);
+            height: 47px; padding: 8px 0; border-radius: 6px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-primary); line-height: 28px; padding-left: 15px; padding-right: 20px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 45px; right: 5px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: var(--text-secondary) transparent transparent transparent; margin-top: 4px;
+        }
+        .select2-dropdown {
+            background-color: var(--bg-primary); border: 1px solid var(--border-color);
+            box-shadow: 0 4px 10px var(--shadow-color); border-radius: 6px;
+        }
+        .select2-search--dropdown .select2-search__field {
+            background-color: var(--bg-secondary); border: 1px solid var(--border-color);
+            color: var(--text-primary); border-radius: 4px; margin: 5px;
+        }
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: var(--bg-sidebar); color: var(--text-sidebar-hover);
+        }
+        .select2-results__option { padding: 10px 15px; }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="rd-form-container">
+
+    <div class="page-header">
+        <h1>{{ titulo_pagina|default:"Solicitar Requisição de Desligamento" }}</h1>
+    </div>
+
+    <div class="card form-card">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+
+                <div class="form-field-group full-width">
+                    <label for="{{ form.funcionario_desligado.id_for_label }}">{{ form.funcionario_desligado.label }}</label>
+                    {{ form.funcionario_desligado }} {# Select2 será aplicado #}
+                    {% if form.funcionario_desligado.help_text %}<small class="helptext">{{ form.funcionario_desligado.help_text }}</small>{% endif %}
+                    {% if form.funcionario_desligado.errors %}<div class="errorlist">{{ form.funcionario_desligado.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.tipo_desligamento.id_for_label }}">{{ form.tipo_desligamento.label }}</label>
+                    {{ form.tipo_desligamento }} {# Select2 #}
+                    {% if form.tipo_desligamento.help_text %}<small class="helptext">{{ form.tipo_desligamento.help_text }}</small>{% endif %}
+                    {% if form.tipo_desligamento.errors %}<div class="errorlist">{{ form.tipo_desligamento.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="form-field-group">
+                    <label for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>
+                    {{ form.motivo }} {# Select2 #}
+                    {% if form.motivo.help_text %}<small class="helptext">{{ form.motivo.help_text }}</small>{% endif %}
+                    {% if form.motivo.errors %}<div class="errorlist">{{ form.motivo.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.data_prevista_desligamento.id_for_label }}">{{ form.data_prevista_desligamento.label }}</label>
+                    <input type="date" name="{{ form.data_prevista_desligamento.name }}" id="{{ form.data_prevista_desligamento.id_for_label }}" {% if form.data_prevista_desligamento.value %} value="{{ form.data_prevista_desligamento.value|date:'Y-m-d' }}" {% endif %}>
+                    {% if form.data_prevista_desligamento.help_text %}<small class="helptext">{{ form.data_prevista_desligamento.help_text }}</small>{% endif %}
+                    {% if form.data_prevista_desligamento.errors %}<div class="errorlist">{{ form.data_prevista_desligamento.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group">
+                    <label for="{{ form.tipo_aviso.id_for_label }}">{{ form.tipo_aviso.label }}</label>
+                    {{ form.tipo_aviso }} {# Select2 #}
+                    {% if form.tipo_aviso.help_text %}<small class="helptext">{{ form.tipo_aviso.help_text }}</small>{% endif %}
+                    {% if form.tipo_aviso.errors %}<div class="errorlist">{{ form.tipo_aviso.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="form-field-group full-width" style="flex-direction: row; align-items: center; gap: 10px;">
+                    {{ form.havera_substituicao }}
+                    <label for="{{ form.havera_substituicao.id_for_label }}">{{ form.havera_substituicao.label }}</label>
+                    {% if form.havera_substituicao.errors %}<div class="errorlist">{{ form.havera_substituicao.errors }}</div>{% endif %}
+                </div>
+
+                <div class="form-field-group full-width">
+                    <label for="{{ form.justificativa.id_for_label }}">{{ form.justificativa.label }}</label>
+                    {{ form.justificativa }}
+                    {% if form.justificativa.help_text %}<small class="helptext">{{ form.justificativa.help_text }}</small>{% endif %}
+                    {% if form.justificativa.errors %}<div class="errorlist">{{ form.justificativa.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                 {# Botão cancelar volta para Minhas RDs #}
+                <a href="{% url 'minhas_rds' %}" class="btn btn-cancel">Cancelar</a>
+                <button type="submit" class="btn btn-submit">
+                    <i class="fas fa-paper-plane"></i> Enviar para Aprovação
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+    {# Inclui jQuery e Select2 JS do base.html #}
+    {{ block.super }}
+
+    {# Script específico para ESTA página #}
+    <script>
+        $(document).ready(function() {
+            // --- Inicializa o Select2 ---
+            // Aplica a todos os selects do formulário
+            $('.form-grid select').select2({
+                width: '100%',
+                placeholder: "Selecione...",
+                 allowClear: true 
+            });
+
+            // (Não precisamos da lógica show/hide para este formulário)
+        });
+    </script>
+{% endblock extra_js %}

@@ -1,0 +1,147 @@
+{% extends 'base.html' %} {# Ou 'hierarquia/base.html' #}
+{% load static %}
+
+{% block title %}{{ titulo_pagina|default:"Detalhes da Movimentação" }}{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/rh/mp_detail.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="mp-detail-container">
+
+    <div class="page-header">
+        <h1>{{ titulo_pagina|default:"Detalhes da Movimentação Pessoal" }}</h1>
+        <span class="status-badge status-{{ mp.status }}">{{ mp.get_status_display }}</span>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card detail-card">
+        
+        <div class="detail-section">
+            <h3>Informações Gerais</h3>
+            <div class="detail-item"><strong>ID da Movimentação:</strong> <span>#{{ mp.id }}</span></div>
+            
+            {% comment %} {% endcomment %}
+            <div class="detail-item"><strong>Solicitante:</strong> <span>{{ mp.solicitante.ra_nome }}</span></div>
+            
+            <div class="detail-item"><strong>Data Solicitação:</strong> <span>{{ mp.criado_em|date:"d/m/Y H:i" }}</span></div>
+            
+            {% comment %} {% endcomment %}
+            <div class="detail-item"><strong>Funcionário Movido:</strong> <span>{{ mp.funcionario_movido.ra_nome }}</span></div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Situação Atual</h3>
+            <div class="detail-item"><strong>Cargo Atual:</strong> <span>{{ mp.cargo_atual.nome|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Setor Atual:</strong> <span>{{ mp.setor_atual.nome|default:"N/A" }}</span></div>
+            <div class="detail-item"><strong>Salário Atual:</strong> <span>R$ {{ mp.salario_atual|default:"N/A" }}</span></div>
+            {# Adicionar Centro Custo Atual se aplicável #}
+        </div>
+        
+        <div class="detail-section">
+            <h3>Situação Proposta</h3>
+            <div class="detail-item"><strong>Cargo Proposto:</strong> <span>{{ mp.cargo_proposto.nome }}</span></div>
+            <div class="detail-item"><strong>Setor Proposto:</strong> <span>{{ mp.setor_proposto.nome }}</span></div>
+            <div class="detail-item"><strong>Salário Proposto:</strong> <span>R$ {{ mp.salario_proposto|default:"N/A" }}</span></div>
+            {# Adicionar Centro Custo Proposto se aplicável #}
+            <div class="detail-item"><strong>Data Efetiva:</strong> <span>{{ mp.data_efetiva|date:"d/m/Y" }}</span></div>
+            <div class="detail-item"><strong>Justificativa:</strong> <span class="pre-line">{{ mp.justificativa|default:"Nenhuma" }}</span></div>
+            {# Mostrar link do Anexo se houver #}
+            {# {% if mp.anexo %} #}
+            {# <div class="detail-item"><strong>Anexo:</strong> <span><a href="{{ mp.anexo.url }}" target="_blank">Visualizar Anexo</a></span></div> #}
+            {# {% endif %} #}
+        </div>
+
+        <div class="detail-section">
+            <h3>Histórico de Aprovação</h3>
+            <div class="detail-item"><strong>Status Atual:</strong> <span>{{ mp.get_status_display }}</span></div>
+
+            {% if mp.status == 'rejeitada' %}
+                {% comment %} {% endcomment %}
+                <div class="detail-item"><strong>Rejeitado Por:</strong> <span>{{ mp.rejeitado_por.ra_nome|default:"-" }} em {{ mp.data_rejeicao|date:"d/m/Y H:i"|default:"-" }}</span></div>
+                <div class="detail-item"><strong>Observação:</strong> <span class="pre-line" style="color: #dc3545;">{{ mp.observacao_rejeicao|default:"-" }}</span></div>
+            
+            {% elif mp.status == 'pendente_gestores' %}
+                {% if not mp.gestor_proposto_aprovou and mp.aprovador_gestor_proposto %}
+                    {% comment %} {% endcomment %}
+                    <div class="detail-item"><strong>Aguardando Gestor Proposto:</strong> <span>{{ mp.aprovador_gestor_proposto.ra_nome }}</span></div>
+                {% endif %}
+                 {% if not mp.gestor_atual_aprovou and mp.aprovador_gestor_atual %}
+                    {% comment %} {% endcomment %}
+                    <div class="detail-item"><strong>Aguardando Gestor Atual:</strong> <span>{{ mp.aprovador_gestor_atual.ra_nome }}</span></div>
+                {% endif %}
+            
+            {% elif mp.status == 'pendente_rh' %}
+                {% comment %} {% endcomment %}
+                <div class="detail-item"><strong>Aguardando RH:</strong> <span>{{ mp.aprovador_rh.ra_nome|default:"-" }}</span></div>
+            {% endif %}
+
+            {% if mp.aprovado_por_gestor_proposto %}
+            <div class="detail-item"><strong>Aprovado por Gestor Proposto:</strong> <span>{{ mp.aprovado_por_gestor_proposto.ra_nome }} em {{ mp.data_aprovacao_gestor_proposto|date:"d/m/Y H:i" }}</span></div>
+            {% endif %}
+            {% if mp.aprovado_por_gestor_atual %}
+            <div class="detail-item"><strong>Aprovado por Gestor Atual:</strong> <span>{{ mp.aprovado_por_gestor_atual.ra_nome }} em {{ mp.data_aprovacao_gestor_atual|date:"d/m/Y H:i" }}</span></div>
+            {% endif %}
+            {% if mp.aprovado_por_rh %}
+            <div class="detail-item"><strong>Aprovado por RH:</strong> <span>{{ mp.aprovado_por_rh.ra_nome }} em {{ mp.data_aprovacao_rh|date:"d/m/Y H:i" }}</span></div>
+            {% endif %}
+        </div>
+
+        {# Seção de Ações (Apenas para o Aprovador Atual) #}
+        {% if pode_aprovar or pode_rejeitar %}
+        <div class="approval-section">
+            <h3>Sua Ação</h3>
+            <p>Por favor, analise a solicitação e tome uma ação.</p>
+
+            {# Formulário de Rejeição #}
+            <form method="post" action="{% url 'rejeitar_mp' mp.pk %}" id="form-rejeitar">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="observacao_rejeicao">Observação (Obrigatória para Rejeitar):</label>
+                    <textarea name="observacao" id="observacao_rejeicao" rows="3" placeholder="Informe o motivo da rejeição..."></textarea>
+                </div>
+            </form>
+
+            {# Formulário de Aprovação (simples) #}
+            <form method="post" action="{% url 'aprovar_mp' mp.pk %}" id="form-aprovar">
+                {% csrf_token %}
+            </form>
+
+            {# Botões que acionam os formulários #}
+            <div class="approval-actions">
+                {% if pode_aprovar %} 
+                    <button type="submit" form="form-aprovar" class="btn btn-approve">
+                        <i class="fas fa-check"></i> Aprovar e Encaminhar
+                    </button>
+                {% endif %}
+                {% if pode_rejeitar %}
+                    <button type="submit" form="form-rejeitar" class="btn btn-reject">
+                        <i class="fas fa-times"></i> Rejeitar
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div> {# Fim do card #}
+
+    <div style="text-align: center; margin-top: 20px;">
+        {# Link de Voltar - ajusta o destino dependendo se pode aprovar ou não #}
+        {% if pode_aprovar or pode_rejeitar %} {# Note: usei as variáveis do contexto #}
+            <a href="{% url 'listar_mps_para_aprovar' %}" class="btn btn-cancel">Voltar para Lista</a>
+        {% elif request.user.funcionario == mp.solicitante %}
+             <a href="{% url 'minhas_mps' %}" class="btn btn-cancel">Voltar para Minhas MPs</a>
+        {% else %}
+             {# Fallback (ex: Diretor ou RH vendo o histórico) #}
+             <a href="{% url 'dashboard' %}" class="btn btn-cancel">Voltar</a> {# Ou um histórico geral? #}
+        {% endif %}
+    </div>
+
+</div>
+{% endblock content %}

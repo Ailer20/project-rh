@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {# Ou 'hierarquia/base.html' #}
 {% load static %}
 
-{% block title %}{{ funcionario.nome }} - Sistema de Hierarquia{% endblock title %}
+{% block title %}{{ funcionario.ra_nome }} Detalhes - Funcionário{% endblock title %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/detalhar_funcionario.css' %}">
@@ -10,7 +10,8 @@
 {% block content %}
 <div class="container">
     <div class="header">
-        <h2>{{ funcionario.nome }}</h2>
+        {# CORRIGIDO: de .nome para .ra_nome #}
+        <h2>{{ funcionario.ra_nome }}</h2>
     </div>
 
     <div class="card">
@@ -18,17 +19,23 @@
         <div class="info-grid">
             <div class="info-item">
                 <div class="info-label">CPF</div>
-                <div class="info-value">{{ funcionario.cpf }}</div>
+                {# CORRIGIDO: de .cpf para .ra_cpf #}
+                <div class="info-value">{{ funcionario.ra_cpf }}</div>
             </div>
-            {% if funcionario.data_nascimento %}
+            
+            {% comment %} {% endcomment %}
+            {% if funcionario.ra_data_nasc %}
             <div class="info-item">
                 <div class="info-label">Data de Nascimento</div>
-                <div class="info-value">{{ funcionario.data_nascimento|date:"d/m/Y" }}</div>
+                {# CORRIGIDO: Formato de data brasileiro a partir do texto "YYYY-MM-DD..." #}
+                <div class="info-value">{{ funcionario.ra_data_nasc|slice:"8:10" }}/{{ funcionario.ra_data_nasc|slice:"5:7" }}/{{ funcionario.ra_data_nasc|slice:"0:4" }}</div>
             </div>
             {% endif %}
+            
             <div class="info-item">
                 <div class="info-label">Data de Admissão</div>
-                <div class="info-value">{{ funcionario.data_admissao|date:"d/m/Y" }}</div>
+                {# CORRIGIDO: de data_admissao para ra_data_admis e formato de data #}
+                <div class="info-value">{{ funcionario.ra_data_admis|slice:"8:10" }}/{{ funcionario.ra_data_admis|slice:"5:7" }}/{{ funcionario.ra_data_admis|slice:"0:4" }}</div>
             </div>
         </div>
     </div>
@@ -47,14 +54,14 @@
             <div class="info-item">
                 <div class="info-label">Setor</div>
                 <div class="info-value">
-                     {% if funcionario.setor_primario %}
+                    {% if funcionario.setor_primario %}
                         {{ funcionario.setor_primario.nome }}
                     {% else %}
                         <span style="color: #999;">Nenhum</span>
                     {% endif %}
                 </div>
             </div>
-            {# Opcional: Adicionar exibição dos setores responsáveis #}
+            
             {% if funcionario.setores_responsaveis.exists %}
             <div class="info-item" style="grid-column: 1 / -1;"> {# Ocupa largura total #}
                 <div class="info-label">Setores Responsáveis</div>
@@ -65,16 +72,12 @@
                 </div>
             </div>
             {% endif %}
-            {% if funcionario.centro_servico %}
-            <div class="info-item">
-                <div class="info-label">Centro de Serviço</div>
-                <div class="info-value">{{ funcionario.centro_servico.nome }}</div>
-            </div>
-            {% endif %}
+            
+            {% comment %} {% endcomment %}
         </div>
     </div>
 
-    {# Bloco Superiores - Usando {% empty %} em vez de if/else #}
+    {# Bloco Superiores - Corrigido .nome para .ra_nome #}
     <div class="card">
         <h3>Superiores Hierárquicos</h3>
         <div class="info-grid">
@@ -83,19 +86,19 @@
                 <div class="info-label">{{ superior.cargo.nome }}</div>
                 <div class="info-value">
                     <a href="{% url 'detalhar_funcionario' superior.id %}">
-                        {{ superior.nome }} →
+                        {{ superior.ra_nome }} →
                     </a>
                 </div>
             </div>
             {% empty %}
-            <div class="info-item empty-state" style="grid-column: 1 / -1;"> {# Ocupa toda a largura do grid #}
+            <div class="info-item empty-state" style="grid-column: 1 / -1;">
                 <p>Nenhum superior hierárquico</p>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    {# Bloco Subordinados - Usando {% empty %} #}
+    {# Bloco Subordinados - Corrigido .nome para .ra_nome #}
     <div class="card">
         <h3>Subordinados</h3>
         <div class="info-grid">
@@ -104,7 +107,7 @@
                 <div class="info-label">{{ subordinado.cargo.nome }}</div>
                 <div class="info-value">
                     <a href="{% url 'detalhar_funcionario' subordinado.id %}">
-                        {{ subordinado.nome }} →
+                        {{ subordinado.ra_nome }} →
                     </a>
                 </div>
             </div>

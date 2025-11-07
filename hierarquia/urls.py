@@ -1,6 +1,6 @@
 # hierarquia/urls.py
 from django.urls import path
-from . import views
+from . import views    
 
 urlpatterns = [
     # --- Autenticação ---
@@ -14,7 +14,7 @@ urlpatterns = [
     path('funcionarios/setor/<int:setor_id>/', views.listar_funcionarios_por_setor, name='listar_funcionarios_por_setor'),
     path('funcionarios/setores/', views.listar_setores_funcionarios, name='listar_setores_funcionarios'),
     path('funcionarios/cadastrar/', views.cadastrar_funcionario, name='cadastrar_funcionario'),
-    path('funcionarios/<int:funcionario_id>/', views.detalhar_funcionario, name='detalhar_funcionario'),
+    path('funcionarios/<int:pk>/', views.detalhar_funcionario, name='detalhar_funcionario'),
     path('cargos/', views.gerenciar_cargos, name='gerenciar_cargos'), # Ajuste o nome se necessário
     path('setores/', views.gerenciar_setores, name='gerenciar_setores'), # Ajuste o nome se necessário
 
