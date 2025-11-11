@@ -6,6 +6,11 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('hierarquia.urls')),
+    
+    # Rotas da API para o aplicativo Flutter
+    path('api/', include('hierarquia.api_urls')), # Rotas de dados (Funcionários, etc.)
+    path('api/auth/', include('djoser.urls')),
+    path('api/auth/', include('djoser.urls.authtoken')), # Rotas de login/logout
 ]
 
 if settings.DEBUG:
