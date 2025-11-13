@@ -1,0 +1,219 @@
+/* static/css/rh/historico_rps_list.css */
+
+/* --- Header da Página --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.text-muted {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin-bottom: 20px;
+}
+
+/* --- Container da Tabela (Card) --- */
+.table-responsive {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 10px 25px 25px 25px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    overflow-x: auto;
+}
+
+/* --- Tabela de Dados --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.data-table thead th {
+    color: var(--text-muted);
+    text-align: left;
+    padding: 20px 15px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-color); 
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--bg-active); 
+}
+
+.data-table tbody td {
+    padding: 18px 15px;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+/* --- Badges de Status (movidos do inline) --- */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.status-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Cores dos status desta página */
+.status-pendente_gestor, 
+.status-pendente_rh { 
+    background-color: #fff8e6; 
+    color: #b38600;
+}
+.status-pendente_gestor::before, 
+.status-pendente_rh::before { 
+    background-color: #ffc107;
+}
+
+.status-em_revisao_gestor { 
+    background-color: #fff3e0; 
+    color: #e65100;
+}
+.status-em_revisao_gestor::before { 
+    background-color: #fd7e14;
+}
+
+.status-aprovada { 
+    background-color: #e6f7ec; 
+    color: #2d8653; 
+}
+.status-aprovada::before { 
+    background-color: #28a745; 
+}
+
+.status-rejeitada { 
+    background-color: #ffebee; 
+    color: #b71c1c; 
+}
+.status-rejeitada::before { 
+    background-color: #dc3545; 
+}
+
+.status-cancelada { 
+    background-color: #f1f3f5; 
+    color: #64758C; 
+}
+.status-cancelada::before { 
+    background-color: #6c757d; 
+}
+
+/* Dark Theme */
+body.dark-theme .status-pendente_gestor,
+body.dark-theme .status-pendente_rh { 
+    background-color: rgba(255, 193, 7, 0.2); 
+    color: #ffdc73; 
+}
+body.dark-theme .status-em_revisao_gestor { 
+    background-color: rgba(253, 126, 20, 0.2); 
+    color: #fdab6a; 
+}
+body.dark-theme .status-aprovada { 
+    background-color: rgba(40, 167, 69, 0.2); 
+    color: #5ddc83; 
+}
+body.dark-theme .status-rejeitada { 
+    background-color: rgba(220, 53, 69, 0.2); 
+    color: #ff8a80; 
+}
+body.dark-theme .status-cancelada { 
+    background-color: rgba(108, 117, 125, 0.2); 
+    color: #a0a0b0; 
+}
+
+
+/* --- Botão de Ação na Tabela --- */
+.btn-action-view {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.btn-action-view i {
+    font-size: 13px;
+}
+.btn-action-view:hover {
+    border-color: var(--bg-sidebar);
+    background-color: var(--bg-active);
+    color: var(--bg-sidebar);
+}
+body.dark-theme .btn-action-view:hover {
+    color: var(--text-sidebar-hover);
+}
+
+
+/* --- Estado Vazio --- */
+.no-results {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    border: 1px dashed var(--border-color);
+}
+.no-results i {
+    color: var(--text-muted);
+    font-size: 40px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* --- Alertas --- */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+.alert-success {
+    background-color: #e6f7ec;
+    color: #2d8653;
+    border: 1px solid #b8e0c9;
+}
+/* (Adicione .alert-info, .alert-danger, .alert-warning se precisar) */
+
+body.dark-theme .alert-success {
+    background-color: rgba(40, 167, 69, 0.2); 
+    color: #5ddc83;
+    border-color: rgba(40, 167, 69, 0.4);
+}

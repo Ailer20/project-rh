@@ -1,0 +1,226 @@
+/* static/css/rh/vaga_list.css */
+
+.vaga-list-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* --- CABEÇALHO --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-content h1 {
+    font-size: 28px;
+    color: var(--text-primary);
+    margin: 0 0 5px 0;
+}
+
+.header-content p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0;
+}
+
+/* --- Botões (usando padrão do sistema) --- */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+}
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+/* --- ✅ NOVO GRID DE CARDS DE VAGA --- */
+.vaga-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+.vaga-card {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.vaga-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px var(--shadow-color);
+}
+
+.vaga-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 15px;
+}
+
+.vaga-titulo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.vaga-card-body {
+    padding: 0 20px 20px 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.info-row {
+    display: flex;
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex-basis: 50%; /* Ocupa metade da linha */
+}
+.info-item i {
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+    color: var(--text-muted);
+}
+.info-item span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vaga-card-footer {
+    padding: 15px 20px;
+    background-color: var(--gray-50);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+body.dark-theme .vaga-card-footer {
+    background-color: var(--gray-900);
+}
+.vaga-card-footer span {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* --- Badges de Status (Copiado/Ajustado do seu CSS) --- */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+.status-badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Cores (Light Theme) */
+.status-aberta { background-color: #e6f7ec; color: var(--success-color); }
+.status-aberta::before { background-color: var(--success-color); }
+.status-em_processo { background-color: #e7f3fe; color: var(--primary-color); }
+.status-em_processo::before { background-color: var(--primary-color); }
+.status-congelada { background-color: #fff8e6; color: var(--warning-color); }
+.status-congelada::before { background-color: var(--warning-color); }
+.status-fechada { background-color: var(--gray-100); color: var(--text-secondary); }
+.status-fechada::before { background-color: var(--text-secondary); }
+
+/* Cores (Dark Theme) */
+body.dark-theme .status-aberta { background-color: rgba(22, 163, 74, 0.2); color: #5ddc83; }
+body.dark-theme .status-em_processo { background-color: rgba(37, 99, 235, 0.2); color: #6bafff; }
+body.dark-theme .status-congelada { background-color: rgba(234, 88, 12, 0.2); color: #ffdc73; }
+body.dark-theme .status-fechada { background-color: rgba(107, 114, 128, 0.2); color: #a0a0b0; }
+
+
+/* --- Botões de Ação na Tabela --- */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.action-buttons a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+.action-buttons a:hover {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+}
+
+/* --- Estado Vazio (CARD) --- */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px;
+    text-align: center;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+.empty-state-icon {
+    font-size: 48px;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+.empty-state h3 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+.empty-state p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+}

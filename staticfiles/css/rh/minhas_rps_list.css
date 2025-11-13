@@ -1,0 +1,244 @@
+/* static/css/rh/minhas_rps_list.css */
+
+/* --- Header da Página --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 700; /* Mais forte */
+    color: var(--text-primary);
+}
+
+/* --- ✅ Botão Principal (Ajustado para novas variáveis) --- */
+.btn-add {
+    background-color: var(--primary-color); /* ✅ Corrigido */
+    color: #FFFFFF;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 600; /* Mais forte */
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-add:hover {
+    background-color: var(--primary-hover); /* ✅ Corrigido */
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); /* ✅ Corrigido */
+    transform: translateY(-2px);
+}
+.btn-add i {
+    font-size: 14px;
+}
+
+/* --- Container da Tabela (Card) --- */
+.table-responsive {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 10px 10px 10px 10px; /* Padding menor para tabela */
+    box-shadow: 0 2px 10px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+/* --- Tabela de Dados --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.data-table thead th {
+    color: var(--text-secondary); /* ✅ Corrigido */
+    text-align: left;
+    padding: 16px 20px; /* Padding consistente */
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color); /* Borda mais fina */
+    background: var(--gray-50); /* Fundo sutil */
+}
+body.dark-theme .data-table thead th {
+    background: var(--gray-900);
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--gray-50); /* ✅ Corrigido */
+}
+body.dark-theme .data-table tbody tr:hover {
+    background-color: var(--gray-800);
+}
+
+
+.data-table tbody td {
+    padding: 16px 20px; /* Padding consistente */
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.data-table tbody td strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 15px; /* Tamanho padrão */
+}
+
+/* --- ✅ Badges de Status (Ajustados para novas variáveis) --- */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.status-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Pendentes / Em Revisão (Amarelo/Laranja) */
+.status-pendente_gestor, 
+.status-pendente_rh,
+.status-em_revisao_gestor { 
+    background-color: rgba(234, 88, 12, 0.1); /* Laranja Fraco */
+    color: var(--warning-color);
+}
+.status-pendente_gestor::before, 
+.status-pendente_rh::before,
+.status-em_revisao_gestor::before { 
+    background-color: var(--warning-color); /* Laranja */
+}
+
+/* Aprovada (Verde) */
+.status-aprovada { 
+    background-color: rgba(22, 163, 74, 0.1); 
+    color: var(--success-color); 
+}
+.status-aprovada::before { 
+    background-color: var(--success-color); /* Verde */
+}
+
+/* Rejeitada (Vermelho) */
+.status-rejeitada { 
+    background-color: rgba(220, 38, 38, 0.1); 
+    color: var(--danger-color); 
+}
+.status-rejeitada::before { 
+    background-color: var(--danger-color); /* Vermelho */
+}
+
+/* Cancelada (Cinza) */
+.status-cancelada { 
+    background-color: var(--gray-100); 
+    color: var(--gray-700); 
+}
+.status-cancelada::before { 
+    background-color: var(--gray-500); /* Cinza */
+}
+
+/* Dark Theme (Já estava bom, apenas ajustando cores) */
+body.dark-theme .status-pendente_gestor,
+body.dark-theme .status-pendente_rh,
+body.dark-theme .status-em_revisao_gestor { 
+    background-color: rgba(234, 88, 12, 0.2); 
+    color: #fdab6a; 
+}
+body.dark-theme .status-aprovada { 
+    background-color: rgba(22, 163, 74, 0.2); 
+    color: #5ddc83; 
+}
+body.dark-theme .status-rejeitada { 
+    background-color: rgba(220, 38, 38, 0.2); 
+    color: #ff8a80; 
+}
+body.dark-theme .status-cancelada { 
+    background-color: rgba(107, 114, 128, 0.2); 
+    color: #a0a0b0; 
+}
+
+/* --- ✅ Botão de Ação na Tabela (Ajustado) --- */
+.btn-action-detail {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--gray-300); /* Borda cinza */
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 8px 14px; /* Um pouco maior */
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600; /* Mais forte */
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.btn-action-detail i {
+    font-size: 13px;
+}
+.btn-action-detail:hover {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+}
+body.dark-theme .btn-action-detail {
+    border-color: var(--gray-700);
+}
+
+/* --- Estado Vazio --- */
+.no-results {
+    background: var(--bg-primary);
+    border-radius: 10px;
+    padding: 50px 40px; /* Mais padding */
+    text-align: center;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    border: 1px dashed var(--border-color);
+}
+.no-results h4 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+.no-results p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin: 0;
+}
+
+/* --- Alertas --- */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+.alert-success {
+    background-color: rgba(22, 163, 74, 0.1); 
+    color: var(--success-color);
+    border-color: rgba(22, 163, 74, 0.2);
+}
+body.dark-theme .alert-success {
+    background-color: rgba(22, 163, 74, 0.2); 
+    color: #5ddc83;
+    border-color: rgba(22, 163, 74, 0.4);
+}

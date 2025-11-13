@@ -2,15 +2,20 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Redireciona quem acessa "/" para a tela de login
+    path('', RedirectView.as_view(url='/login/', permanent=False)),
+
     path('', include('hierarquia.urls')),
-    
-    # Rotas da API para o aplicativo Flutter
-    path('api/', include('hierarquia.api_urls')), # Rotas de dados (Funcionários, etc.)
+
+    # Rotas da API
+    path('api/', include('hierarquia.api_urls')),
     path('api/auth/', include('djoser.urls')),
-    path('api/auth/', include('djoser.urls.authtoken')), # Rotas de login/logout
+    path('api/auth/', include('djoser.urls.authtoken')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,260 @@
+/* static/css/rh/mp_detail.css */
+
+/* --- Header da Página --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Alinha no topo se o título quebrar linha */
+    margin-bottom: 25px;
+    gap: 20px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 700; /* Mais forte */
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+/* --- Card Principal --- */
+.detail-card {
+    max-width: 900px;
+    margin: 0 auto 30px auto;
+    background: var(--bg-primary);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px var(--shadow-color); /* Sombra mais forte */
+    padding: 10px 30px 30px 30px; /* Padding ajustado */
+    border: 1px solid var(--border-color);
+}
+
+/* --- Seções de Detalhes --- */
+.detail-section {
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 1px solid var(--border-color); /* Linha linear */
+}
+.detail-section:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none; /* Remove a primeira borda */
+}
+
+.detail-section h3 {
+    font-size: 16px; /* Um pouco menor */
+    font-weight: 600;
+    color: var(--primary-color); /* ✅ Cor primária */
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+/* --- Itens (Chave/Valor) --- */
+.detail-item {
+    display: flex;
+    margin-bottom: 14px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+.detail-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    width: 220px; /* Largura fixa para o label */
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+.detail-item span {
+    color: var(--text-secondary); /* Cor secundária */
+}
+.detail-item span.pre-line {
+    white-space: pre-line;
+}
+
+
+/* --- ✅ Badges de Status (Ajustados para novas variáveis) --- */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+.status-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+/* Pendentes (Laranja) */
+.status-pendente_gestores, /* Corrigido de pendente_gestor_proposto/atual */
+.status-pendente_rh {
+    background-color: rgba(234, 88, 12, 0.1); 
+    color: var(--warning-color);
+}
+.status-pendente_gestores::before,
+.status-pendente_rh::before { background-color: var(--warning-color); }
+
+/* Aprovada (Verde) */
+.status-aprovada {
+    background-color: rgba(22, 163, 74, 0.1); 
+    color: var(--success-color);
+}
+.status-aprovada::before { background-color: var(--success-color); }
+
+/* Rejeitada (Vermelho) */
+.status-rejeitada {
+    background-color: rgba(220, 38, 38, 0.1); 
+    color: var(--danger-color);
+}
+.status-rejeitada::before { background-color: var(--danger-color); }
+
+/* Dark Theme */
+body.dark-theme .status-pendente_gestores,
+body.dark-theme .status-pendente_rh {
+    background-color: rgba(234, 88, 12, 0.2); 
+    color: #fdab6a;
+}
+body.dark-theme .status-aprovada {
+    background-color: rgba(22, 163, 74, 0.2); 
+    color: #5ddc83;
+}
+body.dark-theme .status-rejeitada {
+    background-color: rgba(220, 38, 38, 0.2); 
+    color: #ff8a80;
+}
+
+/* --- Seção de Ação (Aprovar/Rejeitar) --- */
+.approval-section {
+    /* (Herda o estilo .detail-section) */
+}
+.approval-section p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.form-group label {
+    color: var(--gray-700); /* ✅ Corrigido */
+    font-size: 14px;
+    font-weight: 600;
+}
+body.dark-theme .form-group label {
+    color: var(--gray-300);
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 15px;
+    color: var(--text-primary);
+    background-color: var(--gray-50); /* ✅ Corrigido */
+    border: 1px solid var(--gray-300); /* ✅ Corrigido */
+    border-radius: 6px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+    min-height: 100px;
+    resize: vertical;
+}
+body.dark-theme .form-group textarea {
+    background-color: var(--gray-900);
+    border-color: var(--gray-700);
+}
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color); /* ✅ Corrigido */
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); /* ✅ Corrigido */
+}
+
+/* Botões de Ação */
+.approval-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+.btn {
+    text-decoration: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* ✅ --- BOTÃO APROVAR (Verde) --- */
+.btn-approve {
+    background-color: var(--success-color);
+    color: #FFFFFF;
+    border-color: var(--success-color);
+}
+.btn-approve:hover {
+    background-color: #15803d; /* Darker green */
+    border-color: #15803d;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ✅ --- BOTÃO REJEITAR (Vermelho) --- */
+.btn-reject {
+    background-color: var(--danger-color);
+    color: #FFFFFF;
+    border-color: var(--danger-color);
+}
+.btn-reject:hover {
+    background-color: #b91c1c; /* Darker red */
+    border-color: #b91c1c;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Botão Editar (Azul) - Não usado aqui por padrão */
+.btn-edit-rh {
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+    border-color: var(--primary-color);
+}
+.btn-edit-rh:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ✅ --- BOTÃO VOLTAR/CANCELAR (Cinza) --- */
+.btn-cancel {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border-color: var(--gray-300);
+}
+body.dark-theme .btn-cancel {
+    color: var(--gray-300);
+    border-color: var(--gray-700);
+}
+.btn-cancel:hover {
+    background-color: var(--gray-50);
+    border-color: var(--gray-500);
+    color: var(--text-primary);
+}
+body.dark-theme .btn-cancel:hover {
+    background-color: var(--gray-800);
+    border-color: var(--gray-500);
+    color: var(--text-primary);
+}
