@@ -45,9 +45,9 @@
             </button>
 
             {% if user.is_authenticated %}
-                <a href="{% url 'logout' %}" title="Sair"><i class="fas fa-sign-out-alt"></i></a>
+                <a href="{% url 'rh_logout' %}" title="Sair"><i class="fas fa-sign-out-alt"></i></a>
             {% else %}
-                <a href="{% url 'login' %}" title="Entrar"><i class="fas fa-sign-in-alt"></i></a>
+                <a href="{% url 'rh_login' %}" title="Entrar"><i class="fas fa-sign-in-alt"></i></a>
             {% endif %}
         </div>
     </nav>
@@ -257,7 +257,7 @@
            if (sidebar) {
                 sidebar.addEventListener('mouseenter', () => {
                     if (!isPinned) {
-                        sidebar.classList.remove('sidebar-collapsed');
+                        sidebar.classList.remove('sidebar-collapsed');  
                         if (mainContent) mainContent.style.marginLeft = 'var(--sidebar-width-expanded)';
                     }
                 });

@@ -28,3 +28,13 @@ from .rh.rd.views_rd import (
 # Se o arquivo original views.py estava dentro de uma pasta 'rh',
 # esta importação pode precisar ser ajustada para refletir a estrutura do projeto.
 # Assumindo que este novo views.py está no mesmo nível do diretório 'rh'.
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+
+def index_redirect_view(request):
+    """Redireciona para o dashboard se logado, ou para o login se deslogado."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    else:
+        # Usa o LOGIN_URL definido no settings.py
+        return redirect('login')

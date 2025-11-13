@@ -9,6 +9,15 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Sessão expira em 1 hora (3600 segundos)
+SESSION_COOKIE_AGE = 3600
+
+# Atualiza o timestamp da sessão a cada requisição
+# Isso garante que a sessão expira 1 hora APÓS A ÚLTIMA ATIVIDADE (inatividade)
+SESSION_SAVE_EVERY_REQUEST = True
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

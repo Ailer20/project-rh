@@ -285,15 +285,48 @@ class BaseRequisicaoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filtro de segurança:
+        Filtro de segurança e filtro de STATUS (solicitante/aprovador/histórico):
         O usuário só pode ver RQs que ele solicitou OU que ele precisa aprovar.
+        O filtro é determinado pelo query parameter 'status_filter'.
         """
         funcionario_logado = _get_funcionario_logado(self.request)
-        # Q object: (solicitante=eu) OU (aprovador_atual=eu)
-        return self.queryset.filter(
-            Q(solicitante=funcionario_logado) | Q(aprovador_atual=funcionario_logado)
-        ).distinct().order_by('-' + self.data_field) # data_field será definido nas classes filhas
+        queryset = self.queryset.all()
+        status_filter = self.request.query_params.get('status_filter', 'solicitante') # Default é 'solicitante'
 
+        # --- Lógica de Filtragem (Baseada no status_filter do Flutter) ---
+
+        if status_filter == 'aprovador':
+            # Filtro: Requisições onde o usuário é o aprovador atual (pendentes de aprovação)
+            
+            # Movimentação Pessoal (MP) é especial, pois tem múltiplos aprovadores
+            if self.basename == 'movimentacao-pessoal':
+                q_aprovador = (
+                    Q(status='pendente_gestor_atual', aprovador_gestor_atual=funcionario_logado) |
+                    Q(status='pendente_gestor_proposto', aprovador_gestor_proposto=funcionario_logado) |
+                    Q(status='pendente_rh', aprovador_rh=funcionario_logado)
+                )
+                queryset = queryset.filter(q_aprovador)
+                
+            # RP e RD (assumindo que usam o campo 'aprovador_atual')
+            else:
+                queryset = queryset.filter(aprovador_atual=funcionario_logado).exclude(status__in=['aprovada', 'rejeitada', 'cancelada'])
+        
+        elif status_filter == 'historico':
+            # Filtro: Requisições que o usuário solicitou E que foram FINALIZADAS
+            queryset = queryset.filter(solicitante=funcionario_logado).filter(status__in=['aprovada', 'rejeitada', 'cancelada'])
+        
+        elif status_filter == 'solicitante':
+            # Filtro: Todas as requisições que o usuário solicitou (Minhas RPs, Minhas MPs, etc.)
+            queryset = queryset.filter(solicitante=funcionario_logado)
+        
+        else:
+            # Se não houver filtro válido, retorna apenas as que ele solicitou (comportamento seguro)
+            queryset = queryset.filter(solicitante=funcionario_logado)
+
+
+        # --- Ordenação e Retorno ---
+        return queryset.distinct().order_by('-' + self.data_field)
+    
     def perform_create(self, serializer):
         """
         Define o 'solicitante' automaticamente ao criar.
